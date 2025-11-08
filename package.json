@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
+    "lint": "eslint . --max-warnings 0",
     "preview": "vite preview"
   },
   "dependencies": {
@@ -36,16 +36,18 @@
   "devDependencies": {
     "@types/react": "^18.2.37",
     "@types/react-dom": "^18.2.15",
-    "@typescript-eslint/eslint-plugin": "^6.10.0",
-    "@typescript-eslint/parser": "^6.10.0",
     "@vitejs/plugin-react": "^4.1.1",
     "autoprefixer": "^10.4.16",
-    "eslint": "^8.53.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
+    "@eslint/js": "^9.17.0",
+    "eslint": "^9.17.0",
+    "eslint-plugin-react": "^7.37.5",
+    "eslint-plugin-react-hooks": "^5.1.0",
     "eslint-plugin-react-refresh": "^0.4.4",
+    "globals": "^16.5.0",
     "postcss": "^8.4.31",
     "tailwindcss": "^3.3.5",
     "typescript": "^5.2.2",
+    "typescript-eslint": "^8.46.3",
     "vite": "^4.5.0"
   }
 }
