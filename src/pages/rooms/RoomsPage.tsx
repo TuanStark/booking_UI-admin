@@ -33,7 +33,7 @@ const RoomsPage: React.FC = () => {
   // Fetch rooms on component mount or page changes
   useEffect(() => {
     fetchRooms();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [currentPage]);
 
   const fetchRooms = async () => {

@@ -36,7 +36,7 @@ const UsersPage: React.FC = () => {
   // Fetch users on component mount or filters/page change
   useEffect(() => {
     fetchUsers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [currentPage, selectedRole, selectedStatus, searchTerm]);
 
   const fetchUsers = async () => {

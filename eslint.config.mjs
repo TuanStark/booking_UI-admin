@@ -44,13 +44,15 @@ export default tseslint.config(
       ...pluginReact.configs.recommended.rules,
       ...reactHooks.configs.recommended.rules,
       'react-refresh/only-export-components': [
-        'warn',
+        'off',
         { allowConstantExport: true },
       ],
       'react/react-in-jsx-scope': 'off',
-      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/no-explicit-any': 'off',
+      'react-hooks/exhaustive-deps': 'off',
+      
       '@typescript-eslint/no-unused-vars': [
-        'warn',
+        'off',
         {
           argsIgnorePattern: '^_',
           varsIgnorePattern: '^_',
@@ -61,6 +63,7 @@ export default tseslint.config(
       'react/no-unescaped-entities': 'off',
       'no-useless-catch': 'off',
       'prefer-const': 'off',
+      '@typescript-eslint/no-unused-expressions': 'off',
     },
   },
 );

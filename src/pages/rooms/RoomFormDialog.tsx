@@ -94,7 +94,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
       setImageFiles([]);
     }
     clearErrors();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [room]);
 
   // Sync imageFiles array length with formData.images length

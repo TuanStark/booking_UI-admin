@@ -28,7 +28,7 @@ const BookingsPage: React.FC = () => {
   // Fetch bookings on component mount or filters/page change
   useEffect(() => {
     fetchBookings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [currentPage, selectedStatus, selectedPaymentStatus]);
 
   const fetchBookings = async () => {

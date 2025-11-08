@@ -33,13 +33,13 @@ const PaymentsPage: React.FC = () => {
   // Fetch payments on component mount or filters/page change
   useEffect(() => {
     fetchPayments();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, [currentPage, selectedMethod, selectedStatus]);
 
   // Fetch monthly revenue on component mount
   useEffect(() => {
     fetchMonthlyRevenue();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+     
   }, []);
 
   const fetchPayments = async () => {
