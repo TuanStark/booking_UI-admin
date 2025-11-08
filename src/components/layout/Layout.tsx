@@ -237,7 +237,7 @@ const TopBar: React.FC<{
                     {user?.email || 'user@example.com'}
                   </p>
                   <p className="text-xs leading-none text-muted-foreground capitalize">
-                    {user?.role || 'user'}
+                    {(user?.role as unknown as string) || 'user'}
                   </p>
                 </div>
               </DropdownMenuLabel>

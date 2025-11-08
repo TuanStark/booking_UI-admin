@@ -12,7 +12,7 @@ export const useAuthGuard = () => {
       staff: 1,
     };
 
-    return roleHierarchy[user.role as keyof typeof roleHierarchy] >= roleHierarchy[requiredRole as keyof typeof roleHierarchy];
+    return roleHierarchy[user.role as unknown as keyof typeof roleHierarchy] >= roleHierarchy[requiredRole as unknown as keyof typeof roleHierarchy];
   };
 
   const isAdmin = () => hasRole('admin');
