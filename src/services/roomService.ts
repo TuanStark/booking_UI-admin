@@ -164,11 +164,18 @@ class RoomService {
     const formData = new FormData();
     
     // Add text fields
-    formData.append('roomNumber', data.roomNumber);
-    formData.append('type', data.type);
+    formData.append('name', data.name);
     formData.append('capacity', data.capacity.toString());
     formData.append('price', data.price.toString());
     formData.append('buildingId', data.buildingId);
+    formData.append('squareMeter', (data.squareMeter || 0).toString());
+    formData.append('bedCount', (data.bedCount || 1).toString());
+    formData.append('bathroomCount', (data.bathroomCount || 1).toString());
+    formData.append('floor', (data.floor || 1).toString());
+    formData.append('countCapacity', (data.countCapacity || 0).toString());
+    if (data.status) {
+      formData.append('status', data.status);
+    }
     if (data.description) {
       formData.append('description', data.description);
     }
@@ -179,7 +186,7 @@ class RoomService {
     // Add image files (if provided)
     if (data.imageFiles && data.imageFiles.length > 0) {
       data.imageFiles.forEach((file) => {
-        formData.append('file', file);
+        formData.append('files', file);
       });
       console.log(`Sending ${data.imageFiles.length} file(s) with create request`);
     } else {
@@ -192,10 +199,9 @@ class RoomService {
     }
   
     console.log('FormData entries:', {
-      roomNumber: formData.get('roomNumber'),
-      type: formData.get('type'),
+      name: formData.get('name'),
       buildingId: formData.get('buildingId'),
-      hasFile: formData.has('file'),
+      hasFiles: formData.has('files'),
     });
   
     const response = await fetch(`${this.baseURL}/`, {
@@ -227,11 +233,19 @@ class RoomService {
     const formData = new FormData();
     
     // Add text fields
-    formData.append('roomNumber', data.roomNumber);
-    formData.append('type', data.type);
+    formData.append('name', data.name);
     formData.append('capacity', data.capacity.toString());
+    formData.append('description', data.description || '');
     formData.append('price', data.price.toString());
     formData.append('buildingId', data.buildingId);
+    formData.append('squareMeter', (data.squareMeter || 0).toString());
+    formData.append('bedCount', (data.bedCount || 1).toString());
+    formData.append('bathroomCount', (data.bathroomCount || 1).toString());
+    formData.append('floor', (data.floor || 1).toString());
+    formData.append('countCapacity', (data.countCapacity || 0).toString());
+    if (data.status) {
+      formData.append('status', data.status);
+    }
     if (data.description) {
       formData.append('description', data.description);
     }
@@ -242,7 +256,7 @@ class RoomService {
     // Add image files (if provided)
     if (data.imageFiles && data.imageFiles.length > 0) {
       data.imageFiles.forEach((file) => {
-        formData.append('file', file);
+        formData.append('files', file);
       });
       console.log(`Sending ${data.imageFiles.length} file(s) with update request`);
     } else {
@@ -255,10 +269,9 @@ class RoomService {
     }
   
     console.log('FormData entries for update:', {
-      roomNumber: formData.get('roomNumber'),
-      type: formData.get('type'),
+      name: formData.get('name'),
       buildingId: formData.get('buildingId'),
-      hasFile: formData.has('file'),
+      hasFiles: formData.has('files'),
     });
   
     const response = await fetch(`${this.baseURL}/${id}`, {
@@ -333,42 +346,33 @@ class RoomService {
       }
     }
     
-    // Map status from uppercase (AVAILABLE, BOOKED, MAINTENANCE) to lowercase
-    let roomStatus: 'available' | 'booked' | 'maintenance' = 'available';
+    // Map status - keep uppercase format from Prisma enum
+    let roomStatus: 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' | 'DISABLED' = 'AVAILABLE';
     if (room.status) {
-      const statusLower = room.status.toLowerCase();
-      if (statusLower === 'available') {
-        roomStatus = 'available';
-      } else if (statusLower === 'booked') {
-        roomStatus = 'booked';
-      } else if (statusLower === 'maintenance') {
-        roomStatus = 'maintenance';
+      const statusUpper = room.status.toUpperCase();
+      if (statusUpper === 'AVAILABLE' || statusUpper === 'BOOKED' || statusUpper === 'MAINTENANCE' || statusUpper === 'DISABLED') {
+        roomStatus = statusUpper as 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' | 'DISABLED';
       }
-    }
-    
-    // Map name to roomNumber (API uses 'name' field)
-    const roomNumber = room.roomNumber || room.name || '';
-    
-    // Map type - default to 'shared' if capacity > 1, 'single' otherwise
-    let roomType: 'single' | 'shared' = 'shared';
-    if (room.type) {
-      roomType = room.type;
-    } else if (room.capacity === 1) {
-      roomType = 'single';
     }
     
     return {
       id: room.id,
-      roomNumber: roomNumber,
-      type: roomType,
+      name: room.name || '',
       capacity: room.capacity || 1,
       price: room.price || 0,
+      squareMeter: room.squareMeter ?? 0,
+      bedCount: room.bedCount ?? 1,
+      bathroomCount: room.bathroomCount ?? 1,
+      floor: room.floor ?? 1,
+      countCapacity: room.countCapacity ?? 0,
       status: roomStatus,
-      buildingId: room.buildingId || '',
+      buildingId: room.buildingId || room.building_id || '',
       buildingName: room.buildingName || room.building?.name || '',
       images: images,
       amenities: amenities,
       description: room.description || undefined,
+      createdAt: room.createdAt || room.created_at,
+      updatedAt: room.updatedAt || room.updated_at,
     };
   }
 

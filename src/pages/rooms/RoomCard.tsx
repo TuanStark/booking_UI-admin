@@ -34,12 +34,14 @@ const RoomCard: React.FC<RoomCardProps> = ({
   const firstImage = hasImages ? room.images[0] : null;
 
   const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'available':
+    switch (status.toUpperCase()) {
+      case 'AVAILABLE':
         return 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400';
-      case 'booked':
+      case 'BOOKED':
         return 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400';
-      case 'maintenance':
+      case 'MAINTENANCE':
+        return 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400';
+      case 'DISABLED':
         return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
       default:
         return 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300';
@@ -47,13 +49,15 @@ const RoomCard: React.FC<RoomCardProps> = ({
   };
 
   const getStatusText = (status: string) => {
-    switch (status) {
-      case 'available':
+    switch (status.toUpperCase()) {
+      case 'AVAILABLE':
         return 'Còn trống';
-      case 'booked':
+      case 'BOOKED':
         return 'Đã đặt';
-      case 'maintenance':
+      case 'MAINTENANCE':
         return 'Bảo trì';
+      case 'DISABLED':
+        return 'Vô hiệu hóa';
       default:
         return status;
     }
@@ -70,12 +74,12 @@ const RoomCard: React.FC<RoomCardProps> = ({
         <div className="relative aspect-video w-full overflow-hidden">
           <img 
             src={firstImage} 
-            alt={room.roomNumber}
+            alt={room.name}
             className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
           <div className="absolute bottom-0 left-0 right-0 p-4">
-            <CardTitle className="text-white mb-1 text-lg font-bold">Phòng {room.roomNumber}</CardTitle>
+            <CardTitle className="text-white mb-1 text-lg font-bold">{room.name}</CardTitle>
             <p className="text-sm text-white/90 line-clamp-1">{room.buildingName}</p>
           </div>
           <div className="absolute top-3 right-3">
@@ -122,19 +126,20 @@ const RoomCard: React.FC<RoomCardProps> = ({
         <div className="mb-4">
           {!firstImage && (
             <>
-              <CardTitle className="text-xl mb-1 font-bold">Phòng {room.roomNumber}</CardTitle>
+              <CardTitle className="text-xl mb-1 font-bold">{room.name}</CardTitle>
               <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{room.buildingName}</p>
             </>
           )}
           
           <div className="space-y-3">
-            <div className="flex items-center space-x-2 text-sm">
-              <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
-                <UsersIcon className="h-4 w-4" />
-                <span className="text-gray-600 dark:text-gray-400">Loại:</span>
-                <span className="font-semibold text-gray-900 dark:text-white">{room.type === 'single' ? 'Phòng đơn' : 'Phòng chung'}</span>
+            {room.squareMeter > 0 && (
+              <div className="flex items-center space-x-2 text-sm">
+                <div className="flex items-center space-x-2 text-blue-600 dark:text-blue-400">
+                  <span className="text-gray-600 dark:text-gray-400">Diện tích:</span>
+                  <span className="font-semibold text-gray-900 dark:text-white">{room.squareMeter} m²</span>
+                </div>
               </div>
-            </div>
+            )}
             
             <div className="flex items-center space-x-2 text-sm">
               <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -181,7 +186,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
         onClose={() => setDeleteConfirmOpen(false)}
         onConfirm={confirmDelete}
         title="Xóa phòng"
-        description={`Bạn có chắc chắn muốn xóa phòng "${room.roomNumber}"? Hành động này không thể hoàn tác.`}
+        description={`Bạn có chắc chắn muốn xóa phòng "${room.name}"? Hành động này không thể hoàn tác.`}
         confirmText="Xóa"
         cancelText="Hủy"
         variant="destructive"

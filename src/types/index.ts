@@ -15,16 +15,22 @@ export interface User {
 
 export interface Room {
   id: string;
-  roomNumber: string;
-  type: 'single' | 'shared';
+  name: string;
   capacity: number;
   price: number;
-  status: 'available' | 'booked' | 'maintenance';
+  squareMeter: number;
+  bedCount: number;
+  bathroomCount: number;
+  floor: number;
+  countCapacity: number;
+  status: 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' | 'DISABLED';
   buildingId: string;
   buildingName: string;
   images: string[];
   amenities: string[];
   description?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Building {

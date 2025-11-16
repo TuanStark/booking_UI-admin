@@ -75,7 +75,7 @@ const RoomDetailPage: React.FC = () => {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Phòng {room.roomNumber}</h1>
+            <h1 className="text-3xl font-bold text-gray-900 dark:text-white">{room.name}</h1>
             {room.buildingName && (
               <p className="text-gray-600 dark:text-gray-400 mt-1 flex items-center">
                 <Home className="h-4 w-4 mr-2" /> {room.buildingName}
@@ -83,11 +83,15 @@ const RoomDetailPage: React.FC = () => {
             )}
           </div>
         </div>
-        <span className={`px-4 py-2 rounded-full text-sm font-medium ${room.status === 'available' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-          room.status === 'booked' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+        <span className={`px-4 py-2 rounded-full text-sm font-medium ${
+          room.status === 'AVAILABLE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+          room.status === 'BOOKED' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+          room.status === 'MAINTENANCE' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
           'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
         }`}>
-          {room.status === 'available' ? 'Còn trống' : room.status === 'booked' ? 'Đã đặt' : 'Bảo trì'}
+          {room.status === 'AVAILABLE' ? 'Còn trống' : 
+           room.status === 'BOOKED' ? 'Đã đặt' : 
+           room.status === 'MAINTENANCE' ? 'Bảo trì' : 'Vô hiệu hóa'}
         </span>
       </div>
 
@@ -129,13 +133,42 @@ const RoomDetailPage: React.FC = () => {
           </CardHeader>
           <CardContent className="pt-6">
             <div className="space-y-4">
-              <div className="flex items-center space-x-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50">
-                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-                <div className="flex-1">
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Loại phòng</p>
-                  <p className="font-semibold text-gray-900 dark:text-white">{room.type === 'single' ? 'Phòng đơn' : 'Phòng chung'}</p>
+              {room.squareMeter > 0 && (
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-blue-50 dark:bg-blue-900/20 border border-blue-100 dark:border-blue-900/50">
+                  <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Diện tích</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{room.squareMeter} m²</p>
+                  </div>
                 </div>
-              </div>
+              )}
+              {room.bedCount > 0 && (
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-900/50">
+                  <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Số giường</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{room.bedCount}</p>
+                  </div>
+                </div>
+              )}
+              {room.bathroomCount > 0 && (
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-cyan-50 dark:bg-cyan-900/20 border border-cyan-100 dark:border-cyan-900/50">
+                  <Users className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Số phòng tắm</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{room.bathroomCount}</p>
+                  </div>
+                </div>
+              )}
+              {room.floor > 0 && (
+                <div className="flex items-center space-x-3 p-3 rounded-lg bg-teal-50 dark:bg-teal-900/20 border border-teal-100 dark:border-teal-900/50">
+                  <Users className="h-5 w-5 text-teal-600 dark:text-teal-400" />
+                  <div className="flex-1">
+                    <p className="text-sm text-gray-600 dark:text-gray-400">Tầng</p>
+                    <p className="font-semibold text-gray-900 dark:text-white">{room.floor}</p>
+                  </div>
+                </div>
+              )}
 
               <div className="flex items-center space-x-3 p-3 rounded-lg bg-green-50 dark:bg-green-900/20 border border-green-100 dark:border-green-900/50">
                 <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />

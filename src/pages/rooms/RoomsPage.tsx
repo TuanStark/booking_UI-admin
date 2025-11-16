@@ -123,7 +123,7 @@ const RoomsPage: React.FC = () => {
 
   // Filter rooms locally by search term (client-side filtering for better UX)
   const filteredRooms = rooms.filter(room =>
-    room.roomNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     room.buildingName.toLowerCase().includes(searchTerm.toLowerCase())
   );
 

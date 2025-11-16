@@ -55,20 +55,52 @@ export const buildingSchema = z.object({
 
 // Room schemas
 export const roomSchema = z.object({
-  roomNumber: z
+  name: z
     .string()
-    .min(1, 'Số phòng là bắt buộc')
-    .min(2, 'Số phòng phải có ít nhất 2 ký tự')
-    .max(20, 'Số phòng không được vượt quá 20 ký tự'),
-  type: z.enum(['single', 'shared']),
+    .min(1, 'Tên phòng là bắt buộc')
+    .min(2, 'Tên phòng phải có ít nhất 2 ký tự')
+    .max(100, 'Tên phòng không được vượt quá 100 ký tự'),
   capacity: z
     .number()
     .min(1, 'Sức chứa phải lớn hơn 0')
-    .max(10, 'Sức chứa không được vượt quá 10 người'),
+    .max(100, 'Sức chứa không được vượt quá 100 người'),
   price: z
     .number()
     .min(0, 'Giá phòng không được âm')
-    .max(10000, 'Giá phòng không được vượt quá $10,000'),
+    .max(100000, 'Giá phòng không được vượt quá $100,000'),
+  squareMeter: z
+    .number()
+    .min(0, 'Diện tích không được âm')
+    .max(1000, 'Diện tích không được vượt quá 1000 m²')
+    .optional()
+    .default(0),
+  bedCount: z
+    .number()
+    .min(0, 'Số giường không được âm')
+    .max(20, 'Số giường không được vượt quá 20')
+    .optional()
+    .default(1),
+  bathroomCount: z
+    .number()
+    .min(0, 'Số phòng tắm không được âm')
+    .max(10, 'Số phòng tắm không được vượt quá 10')
+    .optional()
+    .default(1),
+  floor: z
+    .number()
+    .min(0, 'Tầng không được âm')
+    .max(100, 'Tầng không được vượt quá 100')
+    .optional()
+    .default(1),
+  countCapacity: z
+    .number()
+    .min(0, 'Số lượng hiện tại không được âm')
+    .optional()
+    .default(0),
+  status: z
+    .enum(['AVAILABLE', 'BOOKED', 'MAINTENANCE', 'DISABLED'])
+    .optional()
+    .default('AVAILABLE'),
   buildingId: z
     .string()
     .min(1, 'Tòa nhà là bắt buộc'),

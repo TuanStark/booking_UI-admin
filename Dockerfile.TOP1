@@ -1,0 +1,100 @@
+# Create directory structure
+RUN mkdir -p \
+    /rootfs/etc/nginx/conf.d \
+    /rootfs/usr/share/nginx/html \
+    /rootfs/var/log/nginx \
+    /rootfs/var/cache/nginx \
+    /rootfs/usr/local/nginx/{client_body,proxy,fastcgi,uwsgi,scgi}_temp \
+    /rootfs/tmp \
+    /rootfs/run && \
+    chmod 1777 /rootfs/tmp
+
+# Create minimal user database (nobody user)
+RUN echo "nobody:x:65534:65534:nobody:/:/sbin/nologin" > /rootfs/etc/passwd && \
+    echo "nobody:x:65534:" > /rootfs/etc/group
+
+# Copy nginx configuration
+COPY nginx.conf /rootfs/etc/nginx/conf.d/default.conf
+COPY --from=nginx-builder /etc/nginx/mime.types /rootfs/etc/nginx/mime.types
+COPY --from=compressor /app/dist /rootfs/usr/share/nginx/html
+
+# Create main nginx.conf
+RUN cat > /rootfs/etc/nginx/nginx.conf <<'EOF'
+worker_processes auto;
+error_log stderr warn;
+pid /run/nginx.pid;
+
+events {
+    worker_connections 1024;
+    use epoll;
+    multi_accept on;
+}
+
+http {
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    access_log /dev/stdout;
+
+    # Performance optimizations
+    sendfile on;
+    tcp_nopush on;
+    tcp_nodelay on;
+    keepalive_timeout 65;
+    server_tokens off;
+
+    # Compression
+    gzip on;
+    gzip_static on;
+    gzip_vary on;
+    gzip_types text/plain text/css application/json application/javascript text/xml application/xml image/svg+xml;
+
+    include /etc/nginx/conf.d/*.conf;
+}
+EOF
+
+# Set proper ownership
+RUN chown -R 65534:65534 \
+    /rootfs/usr/share/nginx/html \
+    /rootfs/var/log/nginx \
+    /rootfs/var/cache/nginx \
+    /rootfs/usr/local/nginx \
+    /rootfs/tmp \
+    /rootfs/run
+
+# ==============================================================================
+# Stage 5: Final Distroless Image (FROM SCRATCH)
+# ==============================================================================
+FROM scratch
+
+# Re-declare build args for metadata
+ARG BUILD_DATE
+ARG GIT_COMMIT=unknown
+
+# OCI metadata labels
+LABEL org.opencontainers.image.title="Vite React - Distroless" \
+      org.opencontainers.image.description="Distroless minimal image (<6MB) - UPX compressed" \
+      org.opencontainers.image.version="2.2.0-distroless-upx" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${GIT_COMMIT}" \
+      org.opencontainers.image.base.name="scratch" \
+      org.opencontainers.image.source="https://github.com/riipandi/vite-react-template" \
+      org.opencontainers.image.licenses="MIT OR Apache-2.0" \
+      maintainer="contest-2025-optimized"
+
+# Copy static nginx binary and minimal filesystem
+COPY --from=nginx-builder /usr/local/nginx/sbin/nginx /usr/sbin/nginx
+COPY --from=rootfs /rootfs /
+
+# Run as non-root user (nobody = 65534)
+USER 65534:65534
+
+EXPOSE 3000
+
+# Lightweight healthcheck using nginx config test
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+    CMD ["/usr/sbin/nginx", "-t", "-q"]
+
+STOPSIGNAL SIGTERM
+
+ENTRYPOINT ["/usr/sbin/nginx"]
+CMD ["-g", "daemon off;"]
