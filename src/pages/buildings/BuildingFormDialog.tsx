@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, X } from 'lucide-react';
@@ -38,7 +38,7 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
   });
   // Store File objects separately for FormData submission
   const [imageFiles, setImageFiles] = useState<(File | string | null)[]>([]);
-  
+
   const { errors, validate, clearErrors, clearFieldError } = useFormValidation(buildingSchema);
 
   // Load building data when editing
@@ -61,21 +61,21 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
       setImageFiles([]);
     }
     clearErrors();
-     
+
   }, [building]);
 
   // Sync imageFiles array length with formData.images length
   useEffect(() => {
     const imagesLength = formData.images?.length || 0;
     const filesLength = imageFiles.length;
-    
+
     if (imagesLength !== filesLength) {
       console.log('Syncing imageFiles array:', {
         imagesLength,
         filesLength,
         needSync: imagesLength !== filesLength
       });
-      
+
       const newFiles = [...imageFiles];
       // Extend array if needed
       while (newFiles.length < imagesLength) {
@@ -95,7 +95,7 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
       ...prev,
       [name]: value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       clearFieldError(name);
@@ -107,36 +107,43 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate(formData)) return;
-    
+
     try {
       setIsSubmitting(true);
       setSubmitError(null);
-      
+
       // Prepare data with File objects instead of preview URLs
       // Filter out null values and keep only File objects
       const filesToUpload = imageFiles.filter((file): file is File => file instanceof File);
-      
+
+      // Validate: When creating a new building, at least one image is required
+      if (!building && filesToUpload.length === 0) {
+        setSubmitError('Vui lòng chọn ít nhất một ảnh cho tòa nhà');
+        setIsSubmitting(false);
+        return;
+      }
+
       console.log('Current imageFiles state:', imageFiles);
       console.log('Filtered files to upload:', filesToUpload);
-      
+
       const submitData = {
         name: formData.name,
         address: formData.address,
         images: [], // Don't send preview URLs
         imageFiles: filesToUpload,
       };
-      
+
       console.log('Submitting data:', {
         name: submitData.name,
         address: submitData.address,
         imageFilesCount: filesToUpload.length,
         imageFiles: filesToUpload.map(f => ({ name: f.name, size: f.size, type: f.type }))
       });
-      
+
       await onSubmit(submitData);
-      
+
       // Reset form and close dialog on success
       if (!building) {
         setFormData({ name: '', address: '', images: [] });
@@ -170,14 +177,14 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
       currentImagesLength: formData.images?.length || 0,
       imageData: imageData instanceof File ? { name: imageData.name, size: imageData.size } : imageData
     });
-    
+
     const currentImages = formData.images || [];
     // Ensure imageFiles array is large enough
     let currentFiles = [...imageFiles];
     while (currentFiles.length < currentImages.length) {
       currentFiles.push(null);
     }
-    
+
     if (imageData === '') {
       // Remove image
       const newImages = currentImages.filter((_, i) => i !== index);
@@ -211,7 +218,7 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
         }))
       });
       setImageFiles(newFiles); // Update state immediately
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const previewUrl = e.target?.result as string;
@@ -230,13 +237,13 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
   const handleAddImageSlot = () => {
     const currentImages = formData.images || [];
     const currentFiles = imageFiles.length > 0 ? [...imageFiles] : new Array(currentImages.length).fill(null);
-    
+
     console.log('Adding image slot:', {
       currentImagesLength: currentImages.length,
       currentFilesLength: currentFiles.length,
       currentFiles: currentFiles
     });
-    
+
     setFormData(prev => ({
       ...prev,
       images: [...currentImages, '']
@@ -260,8 +267,8 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
         <form onSubmit={handleSubmit} className="grid gap-4 py-4">
           <div className="grid gap-2">
             <Label htmlFor="name">Tên tòa nhà</Label>
-            <Input 
-              id="name" 
+            <Input
+              id="name"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
@@ -273,8 +280,8 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
           </div>
           <div className="grid gap-2">
             <Label htmlFor="address">Địa chỉ</Label>
-            <Input 
-              id="address" 
+            <Input
+              id="address"
               name="address"
               value={formData.address}
               onChange={handleInputChange}
@@ -287,9 +294,9 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
           <div className="grid gap-4">
             <div className="flex items-center justify-between">
               <Label>Ảnh tòa nhà</Label>
-              <Button 
-                type="button" 
-                variant="outline" 
+              <Button
+                type="button"
+                variant="outline"
                 size="sm"
                 onClick={handleAddImageSlot}
               >
@@ -322,9 +329,9 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
               {(!formData.images || formData.images.length === 0) && (
                 <div className="border-2 border-dashed rounded-lg p-8 text-center">
                   <p className="text-sm text-gray-500 mb-2">Chưa có ảnh nào</p>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     onClick={handleAddImageSlot}
                   >
@@ -341,9 +348,9 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
             </div>
           )}
           <div className="flex justify-end space-x-2 pt-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => handleDialogOpenChange(false)}
               disabled={isSubmitting}
             >

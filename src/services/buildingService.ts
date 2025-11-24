@@ -21,7 +21,7 @@ class BuildingService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const defaultHeaders = {
       'Content-Type': 'application/json',
     };
@@ -36,7 +36,7 @@ class BuildingService {
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -56,7 +56,7 @@ class BuildingService {
     options: RequestInit = {}
   ): Promise<T> {
     const token = localStorage.getItem('auth_token');
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -81,11 +81,11 @@ class BuildingService {
     if (params?.limit) {
       queryParams.append('limit', params.limit.toString());
     }
-    
+
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/?${queryString}` : '/';
     const response = await this.authenticatedRequest<any>(endpoint);
-    
+
     // Handle nested response structure: { data: { data: [...], meta: {...} }, statusCode, message }
     let buildingsData: any[] = [];
     let meta: PaginationMeta = {
@@ -94,7 +94,7 @@ class BuildingService {
       limitNumber: 10,
       totalPages: 1,
     };
-    
+
     if (response?.data?.data && Array.isArray(response.data.data)) {
       // Nested structure: { data: { data: [...], meta: {...} }, statusCode, message }
       buildingsData = response.data.data;
@@ -110,10 +110,10 @@ class BuildingService {
     } else {
       console.warn('Unexpected response format from getAll:', response);
     }
-    
+
     // Transform buildings data to match Building type
     const transformed = buildingsData.map((building: any) => this.transformBuilding(building));
-    
+
     return {
       data: transformed,
       meta: meta,
@@ -128,7 +128,7 @@ class BuildingService {
       id: building.id,
       name: building.name,
       address: building.address,
-      images: building.images 
+      images: building.images
         ? (Array.isArray(building.images) ? building.images : [building.images])
         : [],
     };
@@ -160,24 +160,22 @@ class BuildingService {
    * Create a new building with FormData (to support file upload)
    */
   async create(data: BuildingFormData & { imageFiles?: File[] }): Promise<Building> {
+    // Validate that at least one image file is provided
+    if (!data.imageFiles || data.imageFiles.length === 0) {
+      throw new Error('Vui lòng chọn ít nhất một ảnh cho tòa nhà');
+    }
+
     const formData = new FormData();
-    
+
     // Add text fields
     formData.append('name', data.name);
     formData.append('address', data.address);
-    
-    // Add image files (if provided)
-    if (data.imageFiles && data.imageFiles.length > 0) {
-      // Only send the first file if API expects single file
-      // Or send all files if API supports multiple
-      data.imageFiles.forEach((file) => {
-        formData.append('file', file);
-      });
-      console.log(`Sending ${data.imageFiles.length} file(s) with create request`);
-    } else {
-      console.log('No files to upload with create request');
-    }
-    
+
+    // Add image files - use only the first file as backend expects single file
+    // Backend uses FileInterceptor('file') which expects a single file
+    formData.append('file', data.imageFiles[0]);
+    console.log(`Sending file: ${data.imageFiles[0].name} (${data.imageFiles[0].size} bytes)`);
+
     const token = localStorage.getItem('auth_token');
     if (!token) {
       throw new Error('No authentication token found');
@@ -216,18 +214,18 @@ class BuildingService {
    */
   async update(id: string, data: BuildingFormData & { imageFiles?: File[] }): Promise<Building> {
     const formData = new FormData();
-    
+
     // Add text fields
     formData.append('name', data.name);
     formData.append('address', data.address);
-    
+
     // Add image files if provided
     if (data.imageFiles && data.imageFiles.length > 0) {
       data.imageFiles.forEach((file) => {
         formData.append('file', file);
       });
     }
-    
+
     const token = localStorage.getItem('auth_token');
     if (!token) {
       throw new Error('No authentication token found');
@@ -268,13 +266,13 @@ class BuildingService {
    */
   async uploadImages(buildingId: string, images: File[]): Promise<string[]> {
     const formData = new FormData();
-    
+
     images.forEach((image) => {
       formData.append(`images`, image);
     });
 
     const token = localStorage.getItem('auth_token');
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }
