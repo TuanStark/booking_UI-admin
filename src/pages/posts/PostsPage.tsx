@@ -10,13 +10,7 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger
-} from '@/components/ui/dropdown-menu';
+
 import {
     Tabs,
     TabsContent,
@@ -26,7 +20,6 @@ import {
 import {
     Plus,
     Search,
-    MoreHorizontal,
     Edit,
     Trash2,
     Eye
@@ -195,29 +188,23 @@ const PostsPage = () => {
                                             <TableCell>{post.author?.name || 'Unknown'}</TableCell>
                                             <TableCell>{getStatusBadge(post.status)}</TableCell>
                                             <TableCell>{formatDate(post.createdAt)}</TableCell>
-                                            <TableCell className="text-right">
-                                                <DropdownMenu>
-                                                    <DropdownMenuTrigger asChild>
-                                                        <Button variant="ghost" className="h-8 w-8 p-0">
-                                                            <span className="sr-only">Open menu</span>
-                                                            <MoreHorizontal className="h-4 w-4" />
-                                                        </Button>
-                                                    </DropdownMenuTrigger>
-                                                    <DropdownMenuContent align="end">
-                                                        <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-                                                        <DropdownMenuItem onClick={() => navigate(`/posts/${post.id}`)}>
-                                                            <Edit className="mr-2 h-4 w-4" />
-                                                            Chỉnh sửa
-                                                        </DropdownMenuItem>
-                                                        <DropdownMenuItem
-                                                            className="text-red-600"
-                                                            onClick={() => handleDelete(post.id)}
-                                                        >
-                                                            <Trash2 className="mr-2 h-4 w-4" />
-                                                            Xóa
-                                                        </DropdownMenuItem>
-                                                    </DropdownMenuContent>
-                                                </DropdownMenu>
+                                            <TableCell className="text-center">
+                                                <div className="flex flex-row justify-end items-center">
+                                                    <button
+                                                        className="text-green-500"
+                                                        onClick={() => navigate(`/posts/${post.id}`)}>
+                                                        <Eye className="mr-5 h-4 w-4" />
+                                                    </button>
+                                                    <button onClick={() => navigate(`/posts/${post.id}`)}>
+                                                        <Edit className="mr-5 h-4 w-4" />
+                                                    </button>
+                                                    <button
+                                                        className="text-red-600"
+                                                        onClick={() => handleDelete(post.id)}
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                    </button>
+                                                </div>
                                             </TableCell>
                                         </TableRow>
                                     ))
