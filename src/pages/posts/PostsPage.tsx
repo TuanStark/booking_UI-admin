@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Table,
@@ -33,41 +33,67 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import CategoriesPage from '../categories/CategoriesPage';
-
-// Mock data
-const MOCK_POSTS = [
-    {
-        id: '1',
-        title: 'Thông báo về việc đăng ký KTX học kỳ 1 năm học 2024-2025',
-        category: 'Thông báo',
-        author: 'Admin',
-        status: 'published',
-        createdAt: '2024-05-15T08:00:00Z',
-        views: 1250
-    },
-    {
-        id: '2',
-        title: 'Hướng dẫn thanh toán phí nội trú qua ứng dụng ngân hàng',
-        category: 'Hướng dẫn',
-        author: 'Admin',
-        status: 'published',
-        createdAt: '2024-05-10T14:30:00Z',
-        views: 890
-    },
-    {
-        id: '3',
-        title: 'Quy định mới về giờ giấc ra vào KTX',
-        category: 'Quy định',
-        author: 'Ban quản lý',
-        status: 'draft',
-        createdAt: '2024-05-20T09:15:00Z',
-        views: 0
-    }
-];
+import { postService } from '@/services/postService';
+import { useToast } from '@/components/ui/use-toast';
+import { Post } from '@/types';
 
 const PostsPage = () => {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
+    const [posts, setPosts] = useState<Post[]>([]);
+    const [loading, setLoading] = useState(false);
+
+    const fetchPosts = async () => {
+        setLoading(true);
+        try {
+            const response = await postService.findAll({ search: searchTerm });
+            if (response.data) {
+                // Handle paginated response structure where data is nested in data.data
+                const responseData = response.data as any;
+                if (responseData.data && Array.isArray(responseData.data)) {
+                    setPosts(responseData.data);
+                } else if (Array.isArray(response.data)) {
+                    setPosts(response.data as Post[]);
+                } else {
+                    setPosts([]);
+                }
+            }
+        } catch (error) {
+            console.error('Failed to fetch posts:', error);
+            toast({
+                title: "Lỗi",
+                description: "Không thể tải danh sách bài viết.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        fetchPosts();
+    }, [searchTerm]);
+
+    const handleDelete = async (id: string) => {
+        if (!confirm('Bạn có chắc chắn muốn xóa bài viết này?')) return;
+
+        try {
+            await postService.delete(id);
+            toast({
+                title: "Thành công",
+                description: "Đã xóa bài viết.",
+            });
+            fetchPosts();
+        } catch (error) {
+            console.error('Failed to delete post:', error);
+            toast({
+                title: "Lỗi",
+                description: "Không thể xóa bài viết.",
+                variant: "destructive",
+            });
+        }
+    };
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -142,43 +168,60 @@ const PostsPage = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {MOCK_POSTS.map((post) => (
-                                    <TableRow key={post.id}>
-                                        <TableCell className="font-medium">
-                                            <div className="flex flex-col">
-                                                <span className="truncate max-w-[380px]" title={post.title}>{post.title}</span>
-                                                <span className="text-xs text-muted-foreground flex items-center mt-1">
-                                                    <Eye className="h-3 w-3 mr-1" /> {post.views} lượt xem
-                                                </span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>{post.category}</TableCell>
-                                        <TableCell>{post.author}</TableCell>
-                                        <TableCell>{getStatusBadge(post.status)}</TableCell>
-                                        <TableCell>{formatDate(post.createdAt)}</TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" className="h-8 w-8 p-0">
-                                                        <span className="sr-only">Open menu</span>
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Hành động</DropdownMenuLabel>
-                                                    <DropdownMenuItem onClick={() => navigate(`/posts/${post.id}`)}>
-                                                        <Edit className="mr-2 h-4 w-4" />
-                                                        Chỉnh sửa
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem className="text-red-600">
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Xóa
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                {loading ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center py-10">
+                                            Đang tải...
                                         </TableCell>
                                     </TableRow>
-                                ))}
+                                ) : posts.length === 0 ? (
+                                    <TableRow>
+                                        <TableCell colSpan={6} className="text-center py-10">
+                                            Không có bài viết nào.
+                                        </TableCell>
+                                    </TableRow>
+                                ) : (
+                                    posts.map((post) => (
+                                        <TableRow key={post.id}>
+                                            <TableCell className="font-medium">
+                                                <div className="flex flex-col">
+                                                    <span className="truncate max-w-[380px]" title={post.title}>{post.title}</span>
+                                                    <span className="text-xs text-muted-foreground flex items-center mt-1">
+                                                        <Eye className="h-3 w-3 mr-1" /> {post.views} lượt xem
+                                                    </span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>{post.category?.name || 'Chưa phân loại'}</TableCell>
+                                            <TableCell>{post.author?.name || 'Unknown'}</TableCell>
+                                            <TableCell>{getStatusBadge(post.status)}</TableCell>
+                                            <TableCell>{formatDate(post.createdAt)}</TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" className="h-8 w-8 p-0">
+                                                            <span className="sr-only">Open menu</span>
+                                                            <MoreHorizontal className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Hành động</DropdownMenuLabel>
+                                                        <DropdownMenuItem onClick={() => navigate(`/posts/${post.id}`)}>
+                                                            <Edit className="mr-2 h-4 w-4" />
+                                                            Chỉnh sửa
+                                                        </DropdownMenuItem>
+                                                        <DropdownMenuItem
+                                                            className="text-red-600"
+                                                            onClick={() => handleDelete(post.id)}
+                                                        >
+                                                            <Trash2 className="mr-2 h-4 w-4" />
+                                                            Xóa
+                                                        </DropdownMenuItem>
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))
+                                )}
                             </TableBody>
                         </Table>
                     </div>

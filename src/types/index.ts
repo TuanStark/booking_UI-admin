@@ -148,3 +148,66 @@ export interface RegisterData {
   password: string;
   confirmPassword: string;
 }
+
+export interface Post {
+  id: string;
+  title: string;
+  slug: string;
+  content: string;
+  thumbnail?: string;
+  category: {
+    _id: string;
+    name: string;
+  };
+  author: {
+    _id: string;
+    name: string;
+  };
+  status: 'draft' | 'published' | 'archived';
+  views: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreatePostDto {
+  title: string;
+  content: string;
+  thumbnail?: string;
+  category: string; // ID
+  status?: 'draft' | 'published' | 'archived';
+}
+
+export interface UpdatePostDto {
+  title?: string;
+  content?: string;
+  thumbnail?: string;
+  category?: string; // ID
+  status?: 'draft' | 'published' | 'archived';
+}
+
+export interface PostQuery {
+  page?: number;
+  limit?: number;
+  search?: string;
+  category?: string;
+  status?: string;
+}
+
+export interface PostCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateCategoryDto {
+  name: string;
+  description?: string;
+}
+
+export interface UpdateCategoryDto {
+  name?: string;
+  description?: string;
+}

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,29 +9,82 @@ import {
     SelectContent,
     SelectItem,
     SelectTrigger,
-    SelectValue
+    SelectValue,
 } from '@/components/ui/select';
 import {
     Card,
     CardContent,
     CardDescription,
     CardHeader,
-    CardTitle
+    CardTitle,
 } from '@/components/ui/card';
-import { ArrowLeft, Save, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Loader2 } from 'lucide-react';
+import { postService } from '@/services/postService';
+import { categoryService, PostCategory } from '@/services/categoryService';
+import { useToast } from '@/components/ui/use-toast';
 
 const CreatePostPage = () => {
     const navigate = useNavigate();
+    const { toast } = useToast();
     const [loading, setLoading] = useState(false);
+    const [categories, setCategories] = useState<PostCategory[]>([]);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const [formData, setFormData] = useState({
+        title: '',
+        content: '',
+        category: '',
+        status: 'draft',
+        thumbnail: ''
+    });
+
+    useEffect(() => {
+        const fetchCategories = async () => {
+            try {
+                const response = await categoryService.findAll();
+                if (response.data) {
+                    setCategories(response.data as PostCategory[]);
+                }
+            } catch (error) {
+                console.error('Failed to fetch categories:', error);
+                toast({
+                    title: "Lỗi",
+                    description: "Không thể tải danh sách danh mục.",
+                    variant: "destructive",
+                });
+            }
+        };
+
+        fetchCategories();
+    }, []);
+
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
-        // Simulate API call
-        setTimeout(() => {
-            setLoading(false);
+
+        try {
+            await postService.create({
+                title: formData.title,
+                content: formData.content,
+                category: formData.category,
+                status: formData.status as 'draft' | 'published' | 'archived',
+                thumbnail: formData.thumbnail
+            });
+
+            toast({
+                title: "Thành công",
+                description: "Đã tạo bài viết mới.",
+            });
             navigate('/posts');
-        }, 1000);
+        } catch (error) {
+            console.error('Failed to create post:', error);
+            toast({
+                title: "Lỗi",
+                description: "Không thể tạo bài viết. Vui lòng thử lại.",
+                variant: "destructive",
+            });
+        } finally {
+            setLoading(false);
+        }
     };
 
     return (
@@ -61,7 +114,13 @@ const CreatePostPage = () => {
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="title">Tiêu đề bài viết</Label>
-                                    <Input id="title" placeholder="Nhập tiêu đề bài viết..." required />
+                                    <Input
+                                        id="title"
+                                        placeholder="Nhập tiêu đề bài viết..."
+                                        required
+                                        value={formData.title}
+                                        onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                    />
                                 </div>
 
                                 <div className="space-y-2">
@@ -71,6 +130,8 @@ const CreatePostPage = () => {
                                         placeholder="Nhập nội dung bài viết..."
                                         className="min-h-[400px]"
                                         required
+                                        value={formData.content}
+                                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
                                     />
                                     <p className="text-xs text-muted-foreground">
                                         Hỗ trợ định dạng Markdown cơ bản.
@@ -88,7 +149,10 @@ const CreatePostPage = () => {
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="status">Trạng thái</Label>
-                                    <Select defaultValue="draft">
+                                    <Select
+                                        value={formData.status}
+                                        onValueChange={(value) => setFormData({ ...formData, status: value })}
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Chọn trạng thái" />
                                         </SelectTrigger>
@@ -102,53 +166,48 @@ const CreatePostPage = () => {
 
                                 <div className="space-y-2">
                                     <Label htmlFor="category">Danh mục</Label>
-                                    <Select>
+                                    <Select
+                                        value={formData.category}
+                                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                                        required
+                                    >
                                         <SelectTrigger>
                                             <SelectValue placeholder="Chọn danh mục" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="news">Tin tức</SelectItem>
-                                            <SelectItem value="notification">Thông báo</SelectItem>
-                                            <SelectItem value="guide">Hướng dẫn</SelectItem>
-                                            <SelectItem value="activity">Hoạt động</SelectItem>
+                                            {categories.map((category) => (
+                                                <SelectItem key={category._id} value={category._id}>
+                                                    {category.name}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
-                            </CardContent>
-                        </Card>
 
-                        <Card>
-                            <CardHeader>
-                                <CardTitle>Hình ảnh</CardTitle>
-                            </CardHeader>
-                            <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <Label htmlFor="thumbnail">Ảnh thu nhỏ (URL)</Label>
-                                    <div className="flex gap-2">
-                                        <Input id="thumbnail" placeholder="https://..." />
-                                        <Button type="button" variant="outline" size="icon">
-                                            <ImageIcon className="h-4 w-4" />
-                                        </Button>
-                                    </div>
-                                </div>
-                                <div className="border-2 border-dashed rounded-lg p-4 flex items-center justify-center h-40 bg-muted/50">
-                                    <div className="text-center">
-                                        <ImageIcon className="mx-auto h-8 w-8 text-muted-foreground" />
-                                        <span className="mt-2 block text-sm text-muted-foreground">
-                                            Xem trước ảnh
-                                        </span>
-                                    </div>
+                                    <Input
+                                        id="thumbnail"
+                                        placeholder="https://example.com/image.jpg"
+                                        value={formData.thumbnail}
+                                        onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                                    />
                                 </div>
                             </CardContent>
                         </Card>
 
-                        <div className="flex gap-2">
-                            <Button variant="outline" className="w-full" type="button" onClick={() => navigate('/posts')}>
+                        <div className="flex items-center gap-4">
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full"
+                                onClick={() => navigate('/posts')}
+                            >
                                 Hủy
                             </Button>
-                            <Button className="w-full" type="submit" disabled={loading}>
-                                {loading ? 'Đang lưu...' : 'Lưu bài viết'}
-                                <Save className="ml-2 h-4 w-4" />
+                            <Button type="submit" className="w-full" disabled={loading}>
+                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Tạo bài viết
                             </Button>
                         </div>
                     </div>

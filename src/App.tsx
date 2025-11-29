@@ -26,6 +26,7 @@ import RoomsPage from './pages/rooms/RoomsPage';
 import RoomDetailPage from './pages/rooms/RoomDetailPage';
 import PostsPage from './pages/posts/PostsPage';
 import CreatePostPage from './pages/posts/CreatePostPage';
+import { Toaster } from '@/components/ui/toaster';
 
 function App() {
   return (
@@ -76,6 +77,7 @@ function App() {
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
         </Routes>
+        <Toaster />
       </Router>
     </AuthProvider>
   );
