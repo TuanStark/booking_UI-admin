@@ -25,7 +25,7 @@ import SettingsPage from './pages/settings/SettingsPage';
 import RoomsPage from './pages/rooms/RoomsPage';
 import RoomDetailPage from './pages/rooms/RoomDetailPage';
 import PostsPage from './pages/posts/PostsPage';
-import CreatePostPage from './pages/posts/CreatePostPage';
+import PostFormPage from './pages/posts/PostFormPage';
 import { Toaster } from '@/components/ui/toaster';
 
 function App() {
@@ -70,7 +70,8 @@ function App() {
             <Route path="/payments" element={<PaymentsPage />} />
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/posts" element={<PostsPage />} />
-            <Route path="/posts/create" element={<CreatePostPage />} />
+            <Route path="/posts/create" element={<PostFormPage />} />
+            <Route path="/posts/:id" element={<PostFormPage />} />
             <Route path="/settings" element={<SettingsPage />} />
 
             {/* Catch all route */}

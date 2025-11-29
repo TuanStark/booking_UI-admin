@@ -156,11 +156,11 @@ export interface Post {
   content: string;
   thumbnail?: string;
   category: {
-    _id: string;
+    id: string;
     name: string;
   };
   author: {
-    _id: string;
+    id: string;
     name: string;
   };
   status: 'draft' | 'published' | 'archived';
