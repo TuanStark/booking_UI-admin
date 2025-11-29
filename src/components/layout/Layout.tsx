@@ -4,28 +4,29 @@ import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuLabel, 
-  DropdownMenuSeparator, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger
 } from '@/components/ui/dropdown-menu';
-import { 
-  LayoutDashboard, 
-  Users, 
-  Home, 
-  Calendar, 
-  CreditCard, 
-  MessageSquare, 
-  Settings, 
-  LogOut, 
+import {
+  LayoutDashboard,
+  Users,
+  Home,
+  Calendar,
+  CreditCard,
+  MessageSquare,
+  Settings,
+  LogOut,
   Menu,
-  Bell, 
+  Bell,
   Search,
   Moon,
-  Sun
+  Sun,
+  FileText
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -47,6 +48,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       name: 'Người dùng',
       href: '/users',
       icon: Users,
+    },
+    {
+      name: 'Bài viết',
+      href: '/posts',
+      icon: FileText,
     },
     {
       name: 'Tòa nhà',
@@ -153,10 +159,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
   );
 };
 
-const TopBar: React.FC<{ 
-  isCollapsed: boolean; 
-  onToggle: () => void; 
-  isDarkMode: boolean; 
+const TopBar: React.FC<{
+  isCollapsed: boolean;
+  onToggle: () => void;
+  isDarkMode: boolean;
   onToggleDarkMode: () => void;
 }> = ({ onToggle, isDarkMode, onToggleDarkMode }) => {
   const { user, logout } = useAuth();
@@ -178,7 +184,7 @@ const TopBar: React.FC<{
           >
             <Menu className="h-5 w-5" />
           </Button>
-          
+
           <div className="hidden lg:block">
             <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">
               Tổng quan
@@ -281,8 +287,8 @@ const Layout: React.FC = () => {
         "hidden lg:block transition-all duration-300 ease-in-out",
         isCollapsed ? "lg:w-16" : "lg:w-64"
       )}>
-        <Sidebar 
-          isCollapsed={isCollapsed} 
+        <Sidebar
+          isCollapsed={isCollapsed}
           onToggle={toggleSidebar}
         />
       </div>
@@ -291,8 +297,8 @@ const Layout: React.FC = () => {
         <div className="lg:hidden fixed inset-0 z-50">
           <div className="fixed inset-0 bg-black bg-opacity-50" onClick={toggleSidebar} />
           <div className="relative z-50 w-64 h-full">
-            <Sidebar 
-              isCollapsed={false} 
+            <Sidebar
+              isCollapsed={false}
               onToggle={toggleSidebar}
             />
           </div>
@@ -300,8 +306,8 @@ const Layout: React.FC = () => {
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TopBar 
-          isCollapsed={isCollapsed} 
+        <TopBar
+          isCollapsed={isCollapsed}
           onToggle={toggleSidebar}
           isDarkMode={isDarkMode}
           onToggleDarkMode={toggleDarkMode}

@@ -24,6 +24,8 @@ import ReviewsPage from './pages/reviews/ReviewsPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import RoomsPage from './pages/rooms/RoomsPage';
 import RoomDetailPage from './pages/rooms/RoomDetailPage';
+import PostsPage from './pages/posts/PostsPage';
+import CreatePostPage from './pages/posts/CreatePostPage';
 
 function App() {
   return (
@@ -31,26 +33,26 @@ function App() {
       <Router>
         <Routes>
           {/* Public Routes - Only accessible when not authenticated */}
-          <Route 
-            path="/login" 
+          <Route
+            path="/login"
             element={
               <PublicRoute>
                 <LoginPage />
               </PublicRoute>
-            } 
+            }
           />
-          <Route 
-            path="/register" 
+          <Route
+            path="/register"
             element={
               <PublicRoute>
                 <RegisterPage />
               </PublicRoute>
-            } 
+            }
           />
-          
+
           {/* Protected Routes - Require authentication */}
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
               <ProtectedRoute requiredRole="admin">
                 <Layout />
@@ -66,8 +68,10 @@ function App() {
             <Route path="/bookings" element={<BookingsPage />} />
             <Route path="/payments" element={<PaymentsPage />} />
             <Route path="/reviews" element={<ReviewsPage />} />
+            <Route path="/posts" element={<PostsPage />} />
+            <Route path="/posts/create" element={<CreatePostPage />} />
             <Route path="/settings" element={<SettingsPage />} />
-            
+
             {/* Catch all route */}
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>
