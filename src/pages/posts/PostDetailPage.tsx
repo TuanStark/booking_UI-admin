@@ -77,6 +77,7 @@ export default function PostDetailPage() {
                     title: "Thành công",
                     description: "Đã xóa bài viết.",
                 });
+                navigate('/posts');
             } catch (error) {
                 console.error('Failed to delete post:', error);
                 toast({
@@ -84,6 +85,7 @@ export default function PostDetailPage() {
                     description: "Không thể xóa bài viết.",
                     variant: "destructive",
                 });
+                navigate('/posts');
             }
         } finally {
             setIsLoading(false);

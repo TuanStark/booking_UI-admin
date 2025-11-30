@@ -93,6 +93,7 @@ const PostsPage = () => {
                     title: "Thành công",
                     description: "Đã xóa bài viết.",
                 });
+                fetchPosts();
             } catch (error) {
                 console.error('Failed to delete post:', error);
                 toast({
@@ -100,6 +101,7 @@ const PostsPage = () => {
                     description: "Không thể xóa bài viết.",
                     variant: "destructive",
                 });
+                fetchPosts();
             }
         } finally {
             setIsLoading(false);
