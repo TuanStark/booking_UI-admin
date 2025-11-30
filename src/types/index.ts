@@ -154,6 +154,7 @@ export interface Post {
   title: string;
   slug: string;
   content: string;
+  summary: string;
   thumbnailUrl?: string;
   category: {
     id: string;
@@ -172,6 +173,7 @@ export interface Post {
 export interface CreatePostDto {
   title: string;
   content: string;
+  summary: string;
   thumbnail?: string;
   categoryId: string; // ID
   status?: 'draft' | 'published' | 'archived';
@@ -180,6 +182,7 @@ export interface CreatePostDto {
 export interface UpdatePostDto {
   title?: string;
   content?: string;
+  summary?: string;
   thumbnail?: string;
   category?: string; // ID
   status?: 'draft' | 'published' | 'archived';

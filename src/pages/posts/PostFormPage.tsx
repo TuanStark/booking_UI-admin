@@ -25,6 +25,7 @@ import { postService } from '@/services/postService';
 import { categoryService } from '@/services/categoryService';
 import { useToast } from '@/components/ui/use-toast';
 import { Post, PostCategory } from '@/types';
+import { Textarea } from '@/components/ui/textarea';
 
 const PostFormPage = () => {
     const navigate = useNavigate();
@@ -37,6 +38,7 @@ const PostFormPage = () => {
     const [formData, setFormData] = useState({
         title: '',
         content: '',
+        summary: '',
         categoryId: '',
         status: 'draft',
         thumbnailUrl: ''
@@ -74,6 +76,7 @@ const PostFormPage = () => {
                         setFormData({
                             title: post.title,
                             content: post.content,
+                            summary: post.summary,
                             categoryId: post.category?.id || '',
                             status: post.status,
                             thumbnailUrl: post.thumbnailUrl || ''
@@ -101,6 +104,7 @@ const PostFormPage = () => {
             const data = {
                 title: formData.title,
                 content: formData.content,
+                summary: formData.summary,
                 categoryId: formData.categoryId,
                 status: formData.status as 'draft' | 'published' | 'archived',
                 thumbnailUrl: formData.thumbnailUrl,
@@ -176,6 +180,17 @@ const PostFormPage = () => {
                                         required
                                         value={formData.title}
                                         onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                                    />
+                                </div>
+
+                                <div className="space-y-2">
+                                    <Label htmlFor="summary">Tóm tắt</Label>
+                                    <Textarea
+                                        id="summary"
+                                        placeholder="Nhập tóm tắt..."
+                                        required
+                                        value={formData.summary}
+                                        onChange={(e) => setFormData({ ...formData, summary: e.target.value })}
                                     />
                                 </div>
 

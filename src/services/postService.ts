@@ -43,7 +43,20 @@ class PostService {
                 throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
             }
 
-            return await response.json();
+            if (response.status === 204) {
+                return {
+                    statusCode: 204,
+                    message: 'Success',
+                    data: null
+                } as any;
+            }
+
+            const text = await response.text();
+            return text ? JSON.parse(text) : {
+                statusCode: response.status,
+                message: 'Success',
+                data: null
+            } as any;
         } catch (error) {
             if (error instanceof Error) {
                 throw error;
@@ -65,6 +78,7 @@ class PostService {
         const formData = new FormData();
         formData.append('title', data.title);
         formData.append('content', data.content);
+        formData.append('summary', data.summary);
         formData.append('categoryId', data.categoryId);
         if (data.status) {
             formData.append('status', data.status);
@@ -94,31 +108,46 @@ class PostService {
     }
 
     async update(id: string, data: UpdatePostDto & { file?: File }): Promise<ResponseData<Post>> {
-        const formData = new FormData();
-        if (data.title) formData.append('title', data.title);
-        if (data.content) formData.append('content', data.content);
-        if (data.category) formData.append('categoryId', data.category);
-        if (data.status) formData.append('status', data.status);
-        if (data.file) formData.append('file', data.file);
-
         const token = localStorage.getItem('auth_token');
         const headers: Record<string, string> = {};
         if (token) {
             headers['Authorization'] = `Bearer ${token}`;
         }
 
-        const response = await fetch(`${this.baseURL}/${id}`, {
-            method: 'PATCH',
-            headers,
-            body: formData,
-        });
+        if (data.file) {
+            const formData = new FormData();
+            if (data.title) formData.append('title', data.title);
+            if (data.content) formData.append('content', data.content);
+            if (data.summary) formData.append('summary', data.summary);
+            if (data.category) formData.append('categoryId', data.category);
+            if (data.status) formData.append('status', data.status);
+            formData.append('file', data.file);
 
-        if (!response.ok) {
-            const errorData = await response.json().catch(() => ({}));
-            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            const response = await fetch(`${this.baseURL}/${id}`, {
+                method: 'PATCH',
+                headers,
+                body: formData,
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+
+            return await response.json();
+        } else {
+            const payload: any = {};
+            if (data.title) payload.title = data.title;
+            if (data.content) payload.content = data.content;
+            if (data.summary) payload.summary = data.summary;
+            if (data.category) payload.categoryId = data.category;
+            if (data.status) payload.status = data.status;
+
+            return this.request<ResponseData<Post>>(`/${id}`, {
+                method: 'PATCH',
+                body: JSON.stringify(payload),
+            });
         }
-
-        return await response.json();
     }
 
     async delete(id: string): Promise<ResponseData<void>> {

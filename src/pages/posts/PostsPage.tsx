@@ -29,6 +29,7 @@ import CategoriesPage from '../categories/CategoriesPage';
 import { postService } from '@/services/postService';
 import { useToast } from '@/components/ui/use-toast';
 import { Post } from '@/types';
+import ConfirmDialog from '@/components/ui/confirm-dialog';
 
 const PostsPage = () => {
     const navigate = useNavigate();
@@ -36,6 +37,11 @@ const PostsPage = () => {
     const [searchTerm, setSearchTerm] = useState('');
     const [posts, setPosts] = useState<Post[]>([]);
     const [loading, setLoading] = useState(false);
+
+    //confirm for remove post
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     const fetchPosts = async () => {
         setLoading(true);
@@ -69,23 +75,36 @@ const PostsPage = () => {
     }, [searchTerm]);
 
     const handleDelete = async (id: string) => {
-        if (!confirm('Bạn có chắc chắn muốn xóa bài viết này?')) return;
+        setSelectedId(id);        // Lưu ID cần xoá
+        setIsConfirmOpen(true);   // Mở confirm dialog
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!selectedId) return;
+
+        setIsLoading(true);
 
         try {
-            await postService.delete(id);
-            toast({
-                title: "Thành công",
-                description: "Đã xóa bài viết.",
-            });
-            fetchPosts();
-        } catch (error) {
-            console.error('Failed to delete post:', error);
-            toast({
-                title: "Lỗi",
-                description: "Không thể xóa bài viết.",
-                variant: "destructive",
-            });
-            fetchPosts();
+            console.log("Deleting:", selectedId);
+            try {
+                await postService.delete(selectedId);
+                console.log("Deleted:", selectedId);
+                toast({
+                    title: "Thành công",
+                    description: "Đã xóa bài viết.",
+                });
+            } catch (error) {
+                console.error('Failed to delete post:', error);
+                toast({
+                    title: "Lỗi",
+                    description: "Không thể xóa bài viết.",
+                    variant: "destructive",
+                });
+            }
+        } finally {
+            setIsLoading(false);
+            setIsConfirmOpen(false);
+            setSelectedId(null);
         }
     };
 
@@ -177,11 +196,11 @@ const PostsPage = () => {
                                 ) : (
                                     posts.map((post) => (
                                         <TableRow key={post.id}>
-                                            <TableCell className="font-medium">
+                                            <TableCell className="font-medium" onClick={() => navigate(`/posts/${post.id}`)} >
                                                 <div className="flex flex-col">
-                                                    <span className="truncate max-w-[380px]" title={post.title}>{post.title}</span>
-                                                    <span className="text-xs text-muted-foreground flex items-center mt-1">
-                                                        <Eye className="h-3 w-3 mr-1" /> {post.views} lượt xem
+                                                    <span className="truncate max-w-[380px] cursor-pointer hover:underline hover:text-blue-500" title={post.title}>{post.title}</span>
+                                                    <span className="text-xs text-muted-foreground truncate max-w-[380px]">
+                                                        {post.summary}
                                                     </span>
                                                 </div>
                                             </TableCell>
@@ -219,6 +238,19 @@ const PostsPage = () => {
                     <CategoriesPage />
                 </TabsContent>
             </Tabs>
+
+            {/* Confirm dialog */}
+            <ConfirmDialog
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={handleConfirmDelete}
+                title="Xoá mục này?"
+                description="Hành động này không thể hoàn tác."
+                confirmText="Xoá"
+                cancelText="Hủy"
+                variant="destructive"
+                isLoading={isLoading}
+            />
         </div>
     );
 };

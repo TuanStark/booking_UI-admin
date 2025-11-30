@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { Post } from "@/types";
 import { postService } from "@/services/postService";
 import { useToast } from '@/components/ui/use-toast';
+import ConfirmDialog from "@/components/ui/confirm-dialog";
 
 export default function PostDetailPage() {
     const navigate = useNavigate();
@@ -15,6 +16,11 @@ export default function PostDetailPage() {
     const [post, setPost] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+
+    //confirm for remove post
+    const [isConfirmOpen, setIsConfirmOpen] = useState(false);
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [isLoading, setIsLoading] = useState(false);
 
     useEffect(() => {
         const fetchPost = async () => {
@@ -51,6 +57,41 @@ export default function PostDetailPage() {
                 return <Badge>{status}</Badge>;
         }
     };
+
+    const handleDelete = async (id: string) => {
+        setSelectedId(id);        // Lưu ID cần xoá
+        setIsConfirmOpen(true);   // Mở confirm dialog
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!selectedId) return;
+
+        setIsLoading(true);
+
+        try {
+            console.log("Deleting:", selectedId);
+            try {
+                await postService.delete(id as string);
+                console.log("Deleted:", selectedId);
+                toast({
+                    title: "Thành công",
+                    description: "Đã xóa bài viết.",
+                });
+            } catch (error) {
+                console.error('Failed to delete post:', error);
+                toast({
+                    title: "Lỗi",
+                    description: "Không thể xóa bài viết.",
+                    variant: "destructive",
+                });
+            }
+        } finally {
+            setIsLoading(false);
+            setIsConfirmOpen(false);
+            setSelectedId(null);
+        }
+    };
+
 
     if (loading) return <p className="text-center py-10">Đang tải dữ liệu...</p>;
     if (!post) return <p className="text-center py-10">Không tìm thấy bài viết.</p>;
@@ -106,15 +147,36 @@ export default function PostDetailPage() {
                     </div>
 
                     {/* Dates */}
-                    <div className="text-sm text-muted-foreground pt-4 border-t">
-                        <p><strong>Tạo lúc:</strong> {new Date(post.createdAt).toLocaleString()}</p>
-                        <p><strong>Cập nhật:</strong> {new Date(post.updatedAt).toLocaleString()}</p>
-                        {post.publishedAt && (
-                            <p><strong>Đăng công khai:</strong> {new Date(post.publishedAt).toLocaleString()}</p>
-                        )}
+                    <div className="text-sm text-muted-foreground pt-4 border-t flex justify-between">
+                        <div>
+                            <p><strong>Tạo lúc:</strong> {new Date(post.createdAt).toLocaleString()}</p>
+                            <p><strong>Cập nhật:</strong> {new Date(post.updatedAt).toLocaleString()}</p>
+                            {post.publishedAt && (
+                                <p><strong>Đăng công khai:</strong> {new Date(post.publishedAt).toLocaleString()}</p>
+                            )}
+                        </div>
+                        <div className="flex gap-4">
+                            <Button variant="default" onClick={() => navigate(`/posts/${post.id}/edit`)}>
+                                Sửa
+                            </Button>
+                            <Button variant="destructive" onClick={() => handleDelete(post.id)}>
+                                Xóa
+                            </Button>
+                        </div>
                     </div>
                 </CardContent>
             </Card>
+            <ConfirmDialog
+                isOpen={isConfirmOpen}
+                onClose={() => setIsConfirmOpen(false)}
+                onConfirm={handleConfirmDelete}
+                title="Xoá mục này?"
+                description="Hành động này không thể hoàn tác."
+                confirmText="Xoá"
+                cancelText="Hủy"
+                variant="destructive"
+                isLoading={isLoading}
+            />
         </div>
     );
 }

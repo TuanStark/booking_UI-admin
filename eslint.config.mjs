@@ -50,7 +50,7 @@ export default tseslint.config(
       'react/react-in-jsx-scope': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
       'react-hooks/exhaustive-deps': 'off',
-      
+
       '@typescript-eslint/no-unused-vars': [
         'off',
         {
@@ -64,6 +64,8 @@ export default tseslint.config(
       'no-useless-catch': 'off',
       'prefer-const': 'off',
       '@typescript-eslint/no-unused-expressions': 'off',
+      'react/prop-types': 'off',
+      '@typescript-eslint/no-empty-object-type': 'off'
     },
   },
 );
