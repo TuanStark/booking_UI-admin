@@ -85,6 +85,7 @@ const PostsPage = () => {
                 description: "Không thể xóa bài viết.",
                 variant: "destructive",
             });
+            fetchPosts();
         }
     };
 

@@ -24,7 +24,7 @@ import { ArrowLeft, Loader2 } from 'lucide-react';
 import { postService } from '@/services/postService';
 import { categoryService } from '@/services/categoryService';
 import { useToast } from '@/components/ui/use-toast';
-import { PostCategory, Post } from '@/types';
+import { Post, PostCategory } from '@/types';
 
 const PostFormPage = () => {
     const navigate = useNavigate();
@@ -76,7 +76,7 @@ const PostFormPage = () => {
                             content: post.content,
                             categoryId: post.category?.id || '',
                             status: post.status,
-                            thumbnailUrl: post.thumbnail || ''
+                            thumbnailUrl: post.thumbnailUrl || ''
                         });
                     }
                 } catch (error) {

@@ -154,7 +154,7 @@ export interface Post {
   title: string;
   slug: string;
   content: string;
-  thumbnail?: string;
+  thumbnailUrl?: string;
   category: {
     id: string;
     name: string;
