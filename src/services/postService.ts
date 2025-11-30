@@ -57,22 +57,68 @@ class PostService {
         return this.request<ResponseData<Post[]>>(`?${queryString}`);
     }
 
-    async findOne(idOrSlug: string): Promise<ResponseData<Post>> {
-        return this.request<ResponseData<Post>>(`/${idOrSlug}`);
+    async findOne(id: string): Promise<ResponseData<Post>> {
+        return this.request<ResponseData<Post>>(`/${id}`);
     }
 
-    async create(data: CreatePostDto): Promise<ResponseData<Post>> {
-        return this.request<ResponseData<Post>>('', {
+    async create(data: CreatePostDto & { file?: File }): Promise<ResponseData<Post>> {
+        const formData = new FormData();
+        formData.append('title', data.title);
+        formData.append('content', data.content);
+        formData.append('categoryId', data.categoryId);
+        if (data.status) {
+            formData.append('status', data.status);
+        }
+        if (data.file) {
+            formData.append('file', data.file);
+        }
+
+        const token = localStorage.getItem('auth_token');
+        const headers: Record<string, string> = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${this.baseURL}`, {
             method: 'POST',
-            body: JSON.stringify(data),
+            headers,
+            body: formData,
         });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
     }
 
-    async update(id: string, data: UpdatePostDto): Promise<ResponseData<Post>> {
-        return this.request<ResponseData<Post>>(`/${id}`, {
+    async update(id: string, data: UpdatePostDto & { file?: File }): Promise<ResponseData<Post>> {
+        const formData = new FormData();
+        if (data.title) formData.append('title', data.title);
+        if (data.content) formData.append('content', data.content);
+        if (data.category) formData.append('categoryId', data.category);
+        if (data.status) formData.append('status', data.status);
+        if (data.file) formData.append('file', data.file);
+
+        const token = localStorage.getItem('auth_token');
+        const headers: Record<string, string> = {};
+        if (token) {
+            headers['Authorization'] = `Bearer ${token}`;
+        }
+
+        const response = await fetch(`${this.baseURL}/${id}`, {
             method: 'PATCH',
-            body: JSON.stringify(data),
+            headers,
+            body: formData,
         });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        }
+
+        return await response.json();
     }
 
     async delete(id: string): Promise<ResponseData<void>> {

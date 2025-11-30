@@ -3,7 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+// import { Textarea } from '@/components/ui/textarea'; // Removed unused import
+import TiptapEditor from '@/components/TiptapEditor';
+import ImageUpload from '@/components/ImageUpload';
 import {
     Select,
     SelectContent,
@@ -35,10 +37,11 @@ const PostFormPage = () => {
     const [formData, setFormData] = useState({
         title: '',
         content: '',
-        category: '',
+        categoryId: '',
         status: 'draft',
-        thumbnail: ''
+        thumbnailUrl: ''
     });
+    const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
 
     useEffect(() => {
         const fetchCategories = async () => {
@@ -71,9 +74,9 @@ const PostFormPage = () => {
                         setFormData({
                             title: post.title,
                             content: post.content,
-                            category: post.category?.id || '',
+                            categoryId: post.category?.id || '',
                             status: post.status,
-                            thumbnail: post.thumbnail || ''
+                            thumbnailUrl: post.thumbnail || ''
                         });
                     }
                 } catch (error) {
@@ -98,13 +101,17 @@ const PostFormPage = () => {
             const data = {
                 title: formData.title,
                 content: formData.content,
-                category: formData.category,
+                categoryId: formData.categoryId,
                 status: formData.status as 'draft' | 'published' | 'archived',
-                thumbnail: formData.thumbnail
+                thumbnailUrl: formData.thumbnailUrl,
+                file: thumbnailFile || undefined
             };
 
             if (isEditing && id) {
-                await postService.update(id, data);
+                await postService.update(id, {
+                    ...data,
+                    category: data.categoryId // Map categoryId to category for UpdatePostDto
+                });
                 toast({
                     title: "Thành công",
                     description: "Đã cập nhật bài viết.",
@@ -128,6 +135,11 @@ const PostFormPage = () => {
             setLoading(false);
         }
     };
+    const status = [
+        { id: 1, value: 'DRAFT', label: 'Bản nháp' },
+        { id: 2, value: 'PUBLISHED', label: 'Đã xuất bản' },
+        { id: 3, value: 'ARCHIVED', label: 'Đã lưu trữ' },
+    ];
 
     return (
         <div className="space-y-6 max-w-8xl mx-auto">
@@ -169,13 +181,9 @@ const PostFormPage = () => {
 
                                 <div className="space-y-2">
                                     <Label htmlFor="content">Nội dung</Label>
-                                    <Textarea
-                                        id="content"
-                                        placeholder="Nhập nội dung bài viết..."
-                                        className="min-h-[400px]"
-                                        required
+                                    <TiptapEditor
                                         value={formData.content}
-                                        onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                                        onChange={(content) => setFormData({ ...formData, content })}
                                     />
                                     <p className="text-xs text-muted-foreground">
                                         Hỗ trợ định dạng Markdown cơ bản.
@@ -201,9 +209,11 @@ const PostFormPage = () => {
                                             <SelectValue placeholder="Chọn trạng thái" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            <SelectItem value="draft">Bản nháp</SelectItem>
-                                            <SelectItem value="published">Công khai</SelectItem>
-                                            <SelectItem value="archived">Lưu trữ</SelectItem>
+                                            {status.map((status) => (
+                                                <SelectItem key={status.id} value={status.value}>
+                                                    {status.label}
+                                                </SelectItem>
+                                            ))}
                                         </SelectContent>
                                     </Select>
                                 </div>
@@ -211,8 +221,8 @@ const PostFormPage = () => {
                                 <div className="space-y-2">
                                     <Label htmlFor="category">Danh mục</Label>
                                     <Select
-                                        value={formData.category}
-                                        onValueChange={(value) => setFormData({ ...formData, category: value })}
+                                        value={formData.categoryId}
+                                        onValueChange={(value) => setFormData({ ...formData, categoryId: value })}
                                         required
                                     >
                                         <SelectTrigger>
@@ -229,12 +239,20 @@ const PostFormPage = () => {
                                 </div>
 
                                 <div className="space-y-2">
-                                    <Label htmlFor="thumbnail">Ảnh thu nhỏ (URL)</Label>
-                                    <Input
-                                        id="thumbnail"
-                                        placeholder="https://example.com/image.jpg"
-                                        value={formData.thumbnail}
-                                        onChange={(e) => setFormData({ ...formData, thumbnail: e.target.value })}
+                                    <Label htmlFor="thumbnail">Ảnh thu nhỏ</Label>
+                                    <ImageUpload
+                                        initialImage={formData.thumbnailUrl}
+                                        onImageSelect={(file) => {
+                                            if (file instanceof File) {
+                                                setThumbnailFile(file);
+                                            } else {
+                                                setThumbnailFile(null);
+                                                // Handle case where image is removed (empty string)
+                                                if (file === '') {
+                                                    setFormData({ ...formData, thumbnailUrl: '' });
+                                                }
+                                            }
+                                        }}
                                     />
                                 </div>
                             </CardContent>

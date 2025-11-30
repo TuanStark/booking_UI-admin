@@ -90,11 +90,11 @@ const PostsPage = () => {
 
     const getStatusBadge = (status: string) => {
         switch (status) {
-            case 'published':
+            case 'PUBLISHED':
                 return <Badge className="bg-green-500 hover:bg-green-600">Đã xuất bản</Badge>;
-            case 'draft':
+            case 'DRAFT':
                 return <Badge variant="secondary">Bản nháp</Badge>;
-            case 'archived':
+            case 'ARCHIVED':
                 return <Badge variant="outline">Đã lưu trữ</Badge>;
             default:
                 return <Badge>{status}</Badge>;
@@ -185,7 +185,7 @@ const PostsPage = () => {
                                                 </div>
                                             </TableCell>
                                             <TableCell>{post.category?.name || 'Chưa phân loại'}</TableCell>
-                                            <TableCell>{post.author?.name || 'Unknown'}</TableCell>
+                                            <TableCell>{post.author?.name || 'Admin'}</TableCell>
                                             <TableCell>{getStatusBadge(post.status)}</TableCell>
                                             <TableCell>{formatDate(post.createdAt)}</TableCell>
                                             <TableCell className="text-center">
@@ -195,7 +195,7 @@ const PostsPage = () => {
                                                         onClick={() => navigate(`/posts/${post.id}`)}>
                                                         <Eye className="mr-5 h-4 w-4" />
                                                     </button>
-                                                    <button onClick={() => navigate(`/posts/${post.id}`)}>
+                                                    <button onClick={() => navigate(`/posts/${post.id}/edit`)}>
                                                         <Edit className="mr-5 h-4 w-4" />
                                                     </button>
                                                     <button

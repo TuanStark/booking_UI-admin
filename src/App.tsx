@@ -27,6 +27,7 @@ import RoomDetailPage from './pages/rooms/RoomDetailPage';
 import PostsPage from './pages/posts/PostsPage';
 import PostFormPage from './pages/posts/PostFormPage';
 import { Toaster } from '@/components/ui/toaster';
+import PostDetailPage from './pages/posts/PostDetailPage';
 
 function App() {
   return (
@@ -71,7 +72,8 @@ function App() {
             <Route path="/reviews" element={<ReviewsPage />} />
             <Route path="/posts" element={<PostsPage />} />
             <Route path="/posts/create" element={<PostFormPage />} />
-            <Route path="/posts/:id" element={<PostFormPage />} />
+            <Route path="/posts/:id/edit" element={<PostFormPage />} />
+            <Route path="/posts/:id" element={<PostDetailPage />} />
             <Route path="/settings" element={<SettingsPage />} />
 
             {/* Catch all route */}

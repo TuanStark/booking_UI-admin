@@ -173,7 +173,7 @@ export interface CreatePostDto {
   title: string;
   content: string;
   thumbnail?: string;
-  category: string; // ID
+  categoryId: string; // ID
   status?: 'draft' | 'published' | 'archived';
 }
 
