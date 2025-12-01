@@ -59,8 +59,16 @@ class CategoryService {
     }
 
     async create(data: CreateCategoryDto): Promise<ResponseData<PostCategory>> {
+        const token = localStorage.getItem('auth_token');
+        if (!token) {
+            throw new Error('No authentication token found');
+        }
         return this.request<ResponseData<PostCategory>>('', {
             method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${token}`,
+            },
             body: JSON.stringify(data),
         });
     }
