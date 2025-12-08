@@ -1,4 +1,7 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+import { queryClient } from './lib/queryClient';
 import './index.css';
 
 // Auth Context
@@ -31,58 +34,61 @@ import PostDetailPage from './pages/posts/PostDetailPage';
 
 function App() {
   return (
-    <AuthProvider>
-      <Router>
-        <Routes>
-          {/* Public Routes - Only accessible when not authenticated */}
-          <Route
-            path="/login"
-            element={
-              <PublicRoute>
-                <LoginPage />
-              </PublicRoute>
-            }
-          />
-          <Route
-            path="/register"
-            element={
-              <PublicRoute>
-                <RegisterPage />
-              </PublicRoute>
-            }
-          />
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes - Only accessible when not authenticated */}
+            <Route
+              path="/login"
+              element={
+                <PublicRoute>
+                  <LoginPage />
+                </PublicRoute>
+              }
+            />
+            <Route
+              path="/register"
+              element={
+                <PublicRoute>
+                  <RegisterPage />
+                </PublicRoute>
+              }
+            />
 
-          {/* Protected Routes - Require authentication */}
-          <Route
-            path="/"
-            element={
-              <ProtectedRoute requiredRole="admin">
-                <Layout />
-              </ProtectedRoute>
-            }
-          >
-            <Route index element={<Navigate to="/dashboard" replace />} />
-            <Route path="/dashboard" element={<DashboardPage />} />
-            <Route path="/users" element={<UsersPage />} />
-            <Route path="/buildings" element={<BuildingsPage />} />
-            <Route path="/rooms" element={<RoomsPage />} />
-            <Route path="/rooms/:id" element={<RoomDetailPage />} />
-            <Route path="/bookings" element={<BookingsPage />} />
-            <Route path="/payments" element={<PaymentsPage />} />
-            <Route path="/reviews" element={<ReviewsPage />} />
-            <Route path="/posts" element={<PostsPage />} />
-            <Route path="/posts/create" element={<PostFormPage />} />
-            <Route path="/posts/:id/edit" element={<PostFormPage />} />
-            <Route path="/posts/:id" element={<PostDetailPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
+            {/* Protected Routes - Require authentication */}
+            <Route
+              path="/"
+              element={
+                <ProtectedRoute requiredRole="admin">
+                  <Layout />
+                </ProtectedRoute>
+              }
+            >
+              <Route index element={<Navigate to="/dashboard" replace />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
+              <Route path="/users" element={<UsersPage />} />
+              <Route path="/buildings" element={<BuildingsPage />} />
+              <Route path="/rooms" element={<RoomsPage />} />
+              <Route path="/rooms/:id" element={<RoomDetailPage />} />
+              <Route path="/bookings" element={<BookingsPage />} />
+              <Route path="/payments" element={<PaymentsPage />} />
+              <Route path="/reviews" element={<ReviewsPage />} />
+              <Route path="/posts" element={<PostsPage />} />
+              <Route path="/posts/create" element={<PostFormPage />} />
+              <Route path="/posts/:id/edit" element={<PostFormPage />} />
+              <Route path="/posts/:id" element={<PostDetailPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
 
-            {/* Catch all route */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
-          </Route>
-        </Routes>
-        <Toaster />
-      </Router>
-    </AuthProvider>
+              {/* Catch all route */}
+              <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            </Route>
+          </Routes>
+          <Toaster />
+        </Router>
+      </AuthProvider>
+      <ReactQueryDevtools initialIsOpen={false} />
+    </QueryClientProvider>
   );
 }
 

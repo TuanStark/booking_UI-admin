@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
     Table,
@@ -10,7 +10,6 @@ import {
 } from '@/components/ui/table';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-
 import {
     Tabs,
     TabsContent,
@@ -26,88 +25,52 @@ import {
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import CategoriesPage from '../categories/CategoriesPage';
-import { postService } from '@/services/postService';
+import { usePosts, useDeletePost } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
-import { Post } from '@/types';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
 
 const PostsPage = () => {
     const navigate = useNavigate();
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
-    const [posts, setPosts] = useState<Post[]>([]);
-    const [loading, setLoading] = useState(false);
 
-    //confirm for remove post
+    // TanStack Query hooks
+    const { data: posts = [], isLoading, refetch } = usePosts({ search: searchTerm });
+    const deletePostMutation = useDeletePost();
+
+    // Confirm dialog state
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
 
-    const fetchPosts = async () => {
-        setLoading(true);
-        try {
-            const response = await postService.findAll({ search: searchTerm });
-            if (response.data) {
-                // Handle paginated response structure where data is nested in data.data
-                const responseData = response.data as any;
-                if (responseData.data && Array.isArray(responseData.data)) {
-                    setPosts(responseData.data);
-                } else if (Array.isArray(response.data)) {
-                    setPosts(response.data as Post[]);
-                } else {
-                    setPosts([]);
-                }
-            }
-        } catch (error) {
-            console.error('Failed to fetch posts:', error);
-            toast({
-                title: "Lỗi",
-                description: "Không thể tải danh sách bài viết.",
-                variant: "destructive",
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchPosts();
-    }, [searchTerm]);
-
-    const handleDelete = async (id: string) => {
-        setSelectedId(id);        // Lưu ID cần xoá
-        setIsConfirmOpen(true);   // Mở confirm dialog
+    const handleDelete = (id: string) => {
+        setSelectedId(id);
+        setIsConfirmOpen(true);
     };
 
     const handleConfirmDelete = async () => {
         if (!selectedId) return;
 
-        setIsLoading(true);
-
-        try {
-            console.log("Deleting:", selectedId);
-            try {
-                await postService.delete(selectedId);
-                console.log("Deleted:", selectedId);
+        deletePostMutation.mutate(selectedId, {
+            onSuccess: () => {
                 toast({
                     title: "Thành công",
                     description: "Đã xóa bài viết.",
                 });
-                fetchPosts();
-            } catch (error) {
+                setIsConfirmOpen(false);
+                setSelectedId(null);
+            },
+            onError: (error) => {
                 console.error('Failed to delete post:', error);
                 toast({
                     title: "Lỗi",
                     description: "Không thể xóa bài viết.",
                     variant: "destructive",
                 });
-                fetchPosts();
-            }
-        } finally {
-            setIsLoading(false);
-            setIsConfirmOpen(false);
-            setSelectedId(null);
-        }
+                refetch();
+                setIsConfirmOpen(false);
+                setSelectedId(null);
+            },
+        });
     };
 
     const getStatusBadge = (status: string) => {
@@ -183,7 +146,7 @@ const PostsPage = () => {
                                 </TableRow>
                             </TableHeader>
                             <TableBody>
-                                {loading ? (
+                                {isLoading ? (
                                     <TableRow>
                                         <TableCell colSpan={6} className="text-center py-10">
                                             Đang tải...
@@ -251,7 +214,7 @@ const PostsPage = () => {
                 confirmText="Xoá"
                 cancelText="Hủy"
                 variant="destructive"
-                isLoading={isLoading}
+                isLoading={deletePostMutation.isPending}
             />
         </div>
     );

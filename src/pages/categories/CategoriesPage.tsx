@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import {
     Table,
     TableBody,
@@ -26,45 +26,23 @@ import {
     Trash2,
     Loader2
 } from 'lucide-react';
-import { categoryService } from '@/services/categoryService';
+import { useCategories, useCreateCategory, useDeleteCategory } from '@/hooks/queries';
 import { useToast } from '@/components/ui/use-toast';
-import { PostCategory } from '@/types';
 
 const CategoriesPage = () => {
     const { toast } = useToast();
     const [searchTerm, setSearchTerm] = useState('');
     const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
-    const [categories, setCategories] = useState<PostCategory[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [createLoading, setCreateLoading] = useState(false);
+
+    // TanStack Query hooks
+    const { data: categories = [], isLoading } = useCategories();
+    const createCategoryMutation = useCreateCategory();
+    const deleteCategoryMutation = useDeleteCategory();
 
     const [formData, setFormData] = useState({
         name: '',
         description: ''
     });
-
-    const fetchCategories = async () => {
-        setLoading(true);
-        try {
-            const response = await categoryService.findAll();
-            if (response.data) {
-                setCategories(response.data as PostCategory[]);
-            }
-        } catch (error) {
-            console.error('Failed to fetch categories:', error);
-            toast({
-                title: "Lỗi",
-                description: "Không thể tải danh sách danh mục.",
-                variant: "destructive",
-            });
-        } finally {
-            setLoading(false);
-        }
-    };
-
-    useEffect(() => {
-        fetchCategories();
-    }, []);
 
     const handleCreate = async () => {
         if (!formData.name) {
@@ -76,46 +54,45 @@ const CategoriesPage = () => {
             return;
         }
 
-        setCreateLoading(true);
-        try {
-            await categoryService.create(formData);
-            toast({
-                title: "Thành công",
-                description: "Đã tạo danh mục mới.",
-            });
-            setIsCreateDialogOpen(false);
-            setFormData({ name: '', description: '' });
-            fetchCategories();
-        } catch (error) {
-            console.error('Failed to create category:', error);
-            toast({
-                title: "Lỗi",
-                description: "Không thể tạo danh mục.",
-                variant: "destructive",
-            });
-        } finally {
-            setCreateLoading(false);
-        }
+        createCategoryMutation.mutate(formData, {
+            onSuccess: () => {
+                toast({
+                    title: "Thành công",
+                    description: "Đã tạo danh mục mới.",
+                });
+                setIsCreateDialogOpen(false);
+                setFormData({ name: '', description: '' });
+            },
+            onError: (error) => {
+                console.error('Failed to create category:', error);
+                toast({
+                    title: "Lỗi",
+                    description: "Không thể tạo danh mục.",
+                    variant: "destructive",
+                });
+            },
+        });
     };
 
     const handleDelete = async (id: string) => {
         if (!confirm('Bạn có chắc chắn muốn xóa danh mục này?')) return;
 
-        try {
-            await categoryService.delete(id);
-            toast({
-                title: "Thành công",
-                description: "Đã xóa danh mục.",
-            });
-            fetchCategories();
-        } catch (error) {
-            console.error('Failed to delete category:', error);
-            toast({
-                title: "Lỗi",
-                description: "Không thể xóa danh mục.",
-                variant: "destructive",
-            });
-        }
+        deleteCategoryMutation.mutate(id, {
+            onSuccess: () => {
+                toast({
+                    title: "Thành công",
+                    description: "Đã xóa danh mục.",
+                });
+            },
+            onError: (error) => {
+                console.error('Failed to delete category:', error);
+                toast({
+                    title: "Lỗi",
+                    description: "Không thể xóa danh mục.",
+                    variant: "destructive",
+                });
+            },
+        });
     };
 
     const formatDate = (dateString: string) => {
@@ -188,8 +165,8 @@ const CategoriesPage = () => {
                         </div>
                         <DialogFooter>
                             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>Hủy</Button>
-                            <Button onClick={handleCreate} disabled={createLoading}>
-                                {createLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button onClick={handleCreate} disabled={createCategoryMutation.isPending}>
+                                {createCategoryMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 Tạo danh mục
                             </Button>
                         </DialogFooter>
@@ -208,7 +185,7 @@ const CategoriesPage = () => {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {loading ? (
+                        {isLoading ? (
                             <TableRow>
                                 <TableCell colSpan={4} className="text-center py-10">
                                     Đang tải...
@@ -230,10 +207,10 @@ const CategoriesPage = () => {
                                     <TableCell>{formatDate(category.createdAt)}</TableCell>
                                     <TableCell className="text-right">
                                         <Button
-                                            className=""
                                             variant="outline"
                                             size="icon"
                                             onClick={() => handleDelete(category.id)}
+                                            disabled={deleteCategoryMutation.isPending}
                                         >
                                             <Trash2 className="h-4 w-4 text-red-500" />
                                         </Button>

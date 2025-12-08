@@ -1,58 +1,40 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search } from 'lucide-react';
-import { Booking } from '@/types';
 import { PaginationMeta } from '@/types/globalClass';
 import BookingTableRow from './BookingTableRow';
 import Pagination from '@/components/ui/pagination';
-import { bookingService } from '@/services/bookingService';
+import { useBookings, useApproveBooking, useRejectBooking } from '@/hooks/queries';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useToast } from '@/components/ui/use-toast';
 
-const BookingsPage: React.FC = () => {
+const BookingsPage = () => {
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'pending' | 'confirmed' | 'cancelled' | 'completed'>('all');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<'all' | 'pending' | 'paid' | 'failed' | 'refunded'>('all');
-  const [bookings, setBookings] = useState<Booking[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // TanStack Query hooks
+  const { data, isLoading, error, refetch } = useBookings({
+    page: currentPage,
+    limit: 10,
+    status: selectedStatus !== 'all' ? selectedStatus : undefined,
+    paymentStatus: selectedPaymentStatus !== 'all' ? selectedPaymentStatus : undefined,
+    search: searchTerm || undefined,
+  });
+
+  const approveBookingMutation = useApproveBooking();
+  const rejectBookingMutation = useRejectBooking();
+
+  const bookings = data?.data ?? [];
+  const paginationMeta: PaginationMeta = data?.meta ?? {
     total: 0,
     pageNumber: 1,
     limitNumber: 10,
     totalPages: 1,
-  });
-  const [currentPage, setCurrentPage] = useState(1);
-
-  // Fetch bookings on component mount or filters/page change
-  useEffect(() => {
-    fetchBookings();
-     
-  }, [currentPage, selectedStatus, selectedPaymentStatus]);
-
-  const fetchBookings = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await bookingService.getAll({
-        page: currentPage,
-        limit: 10,
-        status: selectedStatus !== 'all' ? selectedStatus : undefined,
-        paymentStatus: selectedPaymentStatus !== 'all' ? selectedPaymentStatus : undefined,
-        search: searchTerm || undefined,
-      });
-      
-      setBookings(response.data);
-      setPaginationMeta(response.meta);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Không thể tải danh sách đặt phòng';
-      setError(errorMessage);
-      console.error('Error fetching bookings:', err);
-      setBookings([]);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handlePageChange = (page: number) => {
@@ -62,42 +44,54 @@ const BookingsPage: React.FC = () => {
 
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchBookings();
+    refetch();
   };
 
   const handleApproveBooking = async (bookingId: string) => {
-    try {
-      setError(null);
-      await bookingService.approve(bookingId);
-      // Refresh the list
-      await fetchBookings();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Không thể duyệt đặt phòng';
-      setError(errorMessage);
-      await fetchBookings();
-      console.error('Error approving booking:', err);
-    }
+    approveBookingMutation.mutate(bookingId, {
+      onSuccess: () => {
+        toast({
+          title: "Thành công",
+          description: "Đã duyệt đặt phòng.",
+        });
+      },
+      onError: (err) => {
+        const errorMessage = err instanceof Error ? err.message : 'Không thể duyệt đặt phòng';
+        toast({
+          title: "Lỗi",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      },
+    });
   };
 
   const handleRejectBooking = async (bookingId: string) => {
-    try {
-      setError(null);
-      await bookingService.reject(bookingId);
-      // Refresh the list
-      await fetchBookings();
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Không thể từ chối đặt phòng';
-      setError(errorMessage);
-      await fetchBookings();
-      console.error('Error rejecting booking:', err);
-    }
+    rejectBookingMutation.mutate(bookingId, {
+      onSuccess: () => {
+        toast({
+          title: "Thành công",
+          description: "Đã từ chối đặt phòng.",
+        });
+      },
+      onError: (err) => {
+        const errorMessage = err instanceof Error ? err.message : 'Không thể từ chối đặt phòng';
+        toast({
+          title: "Lỗi",
+          description: errorMessage,
+          variant: "destructive",
+        });
+      },
+    });
   };
 
-  // Calculate stats
-  const totalBookings = bookings.length;
-  const pendingBookings = bookings.filter(b => b.bookingStatus === 'pending').length;
-  const confirmedBookings = bookings.filter(b => b.bookingStatus === 'confirmed').length;
-  const totalRevenue = bookings.filter(b => b.paymentStatus === 'paid').reduce((sum, b) => sum + b.totalAmount, 0);
+  // Calculate stats using useMemo for performance
+  const stats = useMemo(() => ({
+    totalBookings: bookings.length,
+    pendingBookings: bookings.filter(b => b.bookingStatus === 'pending').length,
+    confirmedBookings: bookings.filter(b => b.bookingStatus === 'confirmed').length,
+    totalRevenue: bookings.filter(b => b.paymentStatus === 'paid').reduce((sum, b) => sum + b.totalAmount, 0),
+  }), [bookings]);
 
   if (isLoading && bookings.length === 0) {
     return (
@@ -121,26 +115,26 @@ const BookingsPage: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng lượt đặt</p>
-            <p className="text-2xl font-bold text-gray-900 dark:text-white">{totalBookings}</p>
+            <p className="text-2xl font-bold text-gray-900 dark:text-white">{stats.totalBookings}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Chờ duyệt</p>
-            <p className="text-2xl font-bold text-orange-600">{pendingBookings}</p>
+            <p className="text-2xl font-bold text-orange-600">{stats.pendingBookings}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Đã xác nhận</p>
-            <p className="text-2xl font-bold text-green-600">{confirmedBookings}</p>
+            <p className="text-2xl font-bold text-green-600">{stats.confirmedBookings}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Doanh thu</p>
             <p className="text-2xl font-bold text-blue-600">
-              ${totalRevenue.toLocaleString()}
+              ${stats.totalRevenue.toLocaleString()}
             </p>
           </CardContent>
         </Card>
@@ -166,7 +160,7 @@ const BookingsPage: React.FC = () => {
             <select
               value={selectedStatus}
               onChange={(e) => {
-                setSelectedStatus(e.target.value as any);
+                setSelectedStatus(e.target.value as typeof selectedStatus);
                 setCurrentPage(1);
               }}
               className="h-10 rounded-md border border-input bg-background px-3 py-2"
@@ -180,7 +174,7 @@ const BookingsPage: React.FC = () => {
             <select
               value={selectedPaymentStatus}
               onChange={(e) => {
-                setSelectedPaymentStatus(e.target.value as any);
+                setSelectedPaymentStatus(e.target.value as typeof selectedPaymentStatus);
                 setCurrentPage(1);
               }}
               className="h-10 rounded-md border border-input bg-background px-3 py-2"
@@ -202,12 +196,12 @@ const BookingsPage: React.FC = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
+              <p className="text-sm text-red-600 dark:text-red-400">{error instanceof Error ? error.message : 'Đã có lỗi xảy ra'}</p>
+              <Button
+                variant="outline"
+                size="sm"
                 className="mt-2"
-                onClick={() => fetchBookings()}
+                onClick={() => refetch()}
               >
                 Thử lại
               </Button>
