@@ -33,7 +33,7 @@ const RoomsPage = () => {
   const deleteRoomMutation = useDeleteRoom();
 
   // Use TanStack Query
-  const { data: response, isLoading, isError } = useRooms({
+  const { data: response, isLoading, isError, refetch } = useRooms({
     page: currentPage,
     limit: itemsPerPage,
     search: searchTerm || undefined,
@@ -47,27 +47,17 @@ const RoomsPage = () => {
     totalPages: 1,
   };
 
-  // Filter logic (client-side filtering of the current page)
   const filteredRooms = rooms.filter(room => {
-    // Search is already handled by API, but we keep this if API search is partial or for status/building
-    // Actually API search handles name/buildingName usually.
-    // Let's keep status/building filter here.
     const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
     const matchesBuilding = buildingFilter === 'all' || room.buildingId === buildingFilter;
     return matchesStatus && matchesBuilding;
   });
-
-  // Get unique buildings for filter (from current page rooms - might be incomplete but matches previous logic)
-  // Or maybe we should fetch all buildings? For now stick to previous logic.
-  // const buildings = Array.from(new Set(rooms.map(r => JSON.stringify({ id: r.buildingId, name: r.buildingName }))))
-  //   .map(s => JSON.parse(s));
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Handle form submit from RoomFormDialog
   const handleFormSubmit = async (formData: RoomFormData & { imageFiles?: File[] }) => {
     try {
       if (editingRoom) {
@@ -75,12 +65,14 @@ const RoomsPage = () => {
         toast({
           title: "Thành công",
           description: "Đã cập nhật phòng.",
+          duration: 3000,
         });
       } else {
         await createRoomMutation.mutateAsync(formData);
         toast({
           title: "Thành công",
           description: "Đã tạo phòng mới.",
+          duration: 3000,
         });
       }
 
@@ -92,9 +84,8 @@ const RoomsPage = () => {
         title: "Lỗi",
         description: "Không thể lưu thông tin phòng.",
         variant: "destructive",
-      });
-      // Error is already handled in RoomFormDialog? 
-      // If we throw here, RoomFormDialog might catch it.
+        duration: 3000,
+      }); 
       throw error;
     }
   };
@@ -114,27 +105,29 @@ const RoomsPage = () => {
 
     try {
       await deleteRoomMutation.mutateAsync(roomToDelete);
+      
+      await refetch();
+      
       toast({
         title: "Thành công",
         description: "Đã xóa phòng.",
       });
       setDeleteConfirmOpen(false);
       setRoomToDelete(null);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error deleting room:', err);
+      const errorMessage = err?.message || err?.response?.data?.message || 'Không thể xóa phòng';
       toast({
         title: "Lỗi",
-        description: "Không thể xóa phòng.",
+        description: errorMessage,
         variant: "destructive",
       });
       setDeleteConfirmOpen(false);
-      setRoomToDelete(null);
     }
   };
 
   const handleSearch = () => {
     setCurrentPage(1);
-    // fetchRooms(); // No longer needed, filtering is client-side or handled by query params
   };
 
   if (isError) {
@@ -218,8 +211,12 @@ const RoomsPage = () => {
       {/* Delete Confirmation Dialog */}
       <ConfirmDialog
         isOpen={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-        onConfirm={confirmDeleteRoom}
+        onClose={() => {
+          setDeleteConfirmOpen(false);
+        }}
+        onConfirm={() => {
+          confirmDeleteRoom();
+        }}
         title="Xóa phòng"
         description={`Bạn có chắc chắn muốn xóa phòng này? Hành động này không thể hoàn tác.`}
         confirmText="Xóa"

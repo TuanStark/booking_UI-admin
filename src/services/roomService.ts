@@ -26,7 +26,7 @@ class RoomService {
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
     
-    const defaultHeaders = {
+    const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
     };
 
@@ -46,7 +46,22 @@ class RoomService {
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
       }
 
-      return await response.json();
+      // Handle 204 No Content or empty response
+      if (response.status === 204 || response.status === 200) {
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          // No JSON response, return empty object or void
+          return {} as T;
+        }
+      }
+
+      // Try to parse JSON, but handle empty response
+      const text = await response.text();
+      if (!text || text.trim() === '') {
+        return {} as T;
+      }
+
+      return JSON.parse(text);
     } catch (error) {
       if (error instanceof Error) {
         throw error;
@@ -300,9 +315,52 @@ class RoomService {
    * Delete a room (soft delete using PATCH or hard delete with DELETE)
    */
   async delete(id: string): Promise<void> {
-    await this.authenticatedRequest<void>(`/${id}`, {
-      method: 'DELETE',
-    });
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    try {
+      const url = `${this.baseURL}/${id}`;
+      console.log('Deleting room at URL:', url);
+      
+      const response = await fetch(url, {
+        method: 'DELETE',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+        },
+      });
+
+      console.log('Delete response status:', response.status);
+      console.log('Delete response ok:', response.ok);
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+        console.error('Delete room error:', errorMessage, errorData);
+        throw new Error(errorMessage);
+      }
+
+      // For 204 No Content or empty response, just return
+      if (response.status === 204) {
+        console.log('Room deleted successfully (204 No Content)');
+        return;
+      }
+
+      // Try to parse response if there is content
+      const contentType = response.headers.get('content-type');
+      if (contentType && contentType.includes('application/json')) {
+        const data = await response.json();
+        console.log('Delete room response:', data);
+        return;
+      }
+
+      console.log('Room deleted successfully');
+      return;
+    } catch (error) {
+      console.error('Delete room error:', error);
+      throw error;
+    }
   }
 
   /**

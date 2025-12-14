@@ -78,7 +78,11 @@ export const useDeleteRoom = () => {
     return useMutation({
         mutationFn: (id: string) => roomService.delete(id),
         onSuccess: () => {
-            queryClient.invalidateQueries({ queryKey: queryKeys.rooms.lists() });
+            // Invalidate all room queries to refresh the list
+            queryClient.invalidateQueries({ queryKey: queryKeys.rooms.all });
+        },
+        onError: (error) => {
+            console.error('Delete room mutation error:', error);
         },
     });
 };

@@ -34,6 +34,7 @@ const ConfirmDialog: React.FC<ConfirmDialogProps> = ({
   isLoading = false,
 }) => {
   const handleConfirm = () => {
+    console.log('ConfirmDialog: handleConfirm called');
     onConfirm();
   };
 

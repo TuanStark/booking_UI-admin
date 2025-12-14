@@ -1,9 +1,8 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Edit, Trash2, Bed, DollarSign, Users as UsersIcon } from 'lucide-react';
 import { Room } from '@/types';
-import ConfirmDialog from '@/components/ui/confirm-dialog';
 import { useNavigate } from 'react-router-dom';
 
 interface RoomCardProps {
@@ -17,17 +16,12 @@ const RoomCard: React.FC<RoomCardProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const navigate = useNavigate();
 
   const handleDelete = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent navigation when clicking delete
-    setDeleteConfirmOpen(true);
-  };
-
-  const confirmDelete = () => {
+    e.stopPropagation();
+    console.log('RoomCard: handleDelete called for room:', room.id);
     onDelete(room.id);
-    setDeleteConfirmOpen(false);
   };
 
   const hasImages = room.images && room.images.length > 0;
@@ -69,7 +63,6 @@ const RoomCard: React.FC<RoomCardProps> = ({
 
   return (
     <Card className="overflow-hidden cursor-pointer hover:shadow-lg transition-all duration-300 border-2 hover:border-blue-300 dark:hover:border-blue-700 group" onClick={handleCardClick}>
-      {/* Show first image as cover if available, otherwise show icon */}
       {firstImage ? (
         <div className="relative aspect-video w-full overflow-hidden">
           <img 
@@ -179,18 +172,6 @@ const RoomCard: React.FC<RoomCardProps> = ({
           </div>
         )}
       </CardContent>
-
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-        onConfirm={confirmDelete}
-        title="Xóa phòng"
-        description={`Bạn có chắc chắn muốn xóa phòng "${room.name}"? Hành động này không thể hoàn tác.`}
-        confirmText="Xóa"
-        cancelText="Hủy"
-        variant="destructive"
-      />
     </Card>
   );
 };
