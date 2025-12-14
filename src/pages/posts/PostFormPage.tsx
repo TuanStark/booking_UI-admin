@@ -21,19 +21,24 @@ import {
     CardTitle,
 } from '@/components/ui/card';
 import { ArrowLeft, Loader2 } from 'lucide-react';
-import { postService } from '@/services/postService';
-import { categoryService } from '@/services/categoryService';
 import { useToast } from '@/components/ui/use-toast';
-import { Post, PostCategory } from '@/types';
 import { Textarea } from '@/components/ui/textarea';
+import { useCategories } from '@/hooks/queries/useCategoriesQuery';
+import { usePost, useCreatePost, useUpdatePost } from '@/hooks/queries/usePostsQuery';
 
 const PostFormPage = () => {
     const navigate = useNavigate();
     const { id } = useParams();
     const { toast } = useToast();
-    const [loading, setLoading] = useState(false);
-    const [categories, setCategories] = useState<PostCategory[]>([]);
     const isEditing = !!id;
+
+    // Queries
+    const { data: categories = [], isLoading: isLoadingCategories } = useCategories();
+    const { data: post, isLoading: isLoadingPost } = usePost(id);
+
+    // Mutations
+    const createPostMutation = useCreatePost();
+    const updatePostMutation = useUpdatePost();
 
     const [formData, setFormData] = useState({
         title: '',
@@ -45,114 +50,48 @@ const PostFormPage = () => {
     });
     const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
 
+    // Update form data when post data is loaded
     useEffect(() => {
-        const fetchCategories = async () => {
-            try {
-                const response = await categoryService.findAll();
-                if (response.data) {
-                    if (Array.isArray(response.data)) {
-                        setCategories(response.data as PostCategory[]);
-                    } else if (Array.isArray((response.data as any).data)) {
-                        setCategories((response.data as any).data as PostCategory[]);
-                    } else {
-                        setCategories([]);
-                    }
-                } else {
-                    setCategories([]);
-                }
-            } catch (error) {
-                console.error('Failed to fetch categories:', error);
-                toast({
-                    title: "Lỗi",
-                    description: "Không thể tải danh sách danh mục.",
-                    variant: "destructive",
-                });
-            }
-        };
-
-        fetchCategories();
-    }, []);
-
-    useEffect(() => {
-        if (isEditing && id) {
-            const fetchPost = async () => {
-                try {
-                    const response = await postService.findOne(id);
-                    console.log(response);
-                    if (response.data) {
-                        // Check if data is nested (response.data.data) or direct (response.data)
-                        // The API seems to return { data: { data: Post, ... }, ... } based on user report
-                        // But let's handle both cases safely.
-                        // Based on user JSON: { data: { data: { id: ... } } }
-                        // response from service is likely the outer object.
-                        // Wait, service.findOne returns ResponseData<Post>.
-                        // If service returns `await response.json()`, and that json is the user provided json:
-                        // { data: { data: { ... } }, statusCode: 200, ... }
-                        // Then response.data is { data: { ... } } ?? No.
-                        // User JSON: { data: { data: { ... } }, statusCode: 200 ... }
-                        // If this is the raw response, then `response.data` in `PostFormPage` (which is `ResponseData<Post>`)
-                        // corresponds to the outer `data` field of the JSON?
-                        // Let's look at `postService.ts`: `return await response.json();`
-                        // So `response` in `PostFormPage` IS the JSON object.
-                        // `response.data` IS the `data` field of that JSON.
-                        // The user says: "data": { "data": { ... } }
-                        // So `response.data` is `{ data: { ... } }`?
-                        // Or maybe the user meant the whole response is `{ data: { data: ... } }`?
-                        // "data": { "data": { ... } } looks like the `data` field contains another `data` field.
-
-                        // Let's try to be robust.
-                        const postData = (response.data as any).data || response.data;
-                        const post = postData as Post;
-
-                        setFormData({
-                            title: post.title,
-                            content: post.content,
-                            summary: post.summary,
-                            categoryId: post.category?.id || '',
-                            status: post.status,
-                            thumbnailUrl: post.thumbnailUrl || ''
-                        });
-                    }
-                } catch (error) {
-                    console.error('Failed to fetch post:', error);
-                    toast({
-                        title: "Lỗi",
-                        description: "Không thể tải thông tin bài viết.",
-                        variant: "destructive",
-                    });
-                    navigate('/posts');
-                }
-            };
-            fetchPost();
+        if (post) {
+            setFormData({
+                title: post.title,
+                content: post.content,
+                summary: post.summary,
+                categoryId: post.category?.id || '',
+                status: post.status,
+                thumbnailUrl: post.thumbnailUrl || ''
+            });
         }
-    }, [id, isEditing, navigate, toast]);
+    }, [post]);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setLoading(true);
+
+        const data = {
+            title: formData.title,
+            content: formData.content,
+            summary: formData.summary,
+            categoryId: formData.categoryId,
+            status: formData.status as 'draft' | 'published' | 'archived',
+            thumbnailUrl: formData.thumbnailUrl,
+            file: thumbnailFile || undefined
+        };
 
         try {
-            const data = {
-                title: formData.title,
-                content: formData.content,
-                summary: formData.summary,
-                categoryId: formData.categoryId,
-                status: formData.status as 'draft' | 'published' | 'archived',
-                thumbnailUrl: formData.thumbnailUrl,
-                file: thumbnailFile || undefined
-            };
-
             if (isEditing && id) {
-                await postService.update(id, {
-                    ...data,
-                    category: data.categoryId // Map categoryId to category for UpdatePostDto
+                await updatePostMutation.mutateAsync({
+                    id,
+                    data: {
+                        ...data,
+                        category: data.categoryId
+                    }
                 });
                 toast({
                     title: "Thành công",
                     description: "Đã cập nhật bài viết.",
                 });
             } else {
-                await postService.create(data);
+                await createPostMutation.mutateAsync(data);
                 toast({
                     title: "Thành công",
                     description: "Đã tạo bài viết mới.",
@@ -166,10 +105,10 @@ const PostFormPage = () => {
                 description: `Không thể ${isEditing ? 'cập nhật' : 'tạo'} bài viết. Vui lòng thử lại.`,
                 variant: "destructive",
             });
-        } finally {
-            setLoading(false);
         }
     };
+
+    const isLoading = isLoadingCategories || (isEditing && isLoadingPost) || createPostMutation.isPending || updatePostMutation.isPending;
     const status = [
         { id: 1, value: 'DRAFT', label: 'Bản nháp' },
         { id: 2, value: 'PUBLISHED', label: 'Đã xuất bản' },
@@ -313,8 +252,8 @@ const PostFormPage = () => {
                             >
                                 Hủy
                             </Button>
-                            <Button type="submit" className="w-full" disabled={loading}>
-                                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            <Button type="submit" className="w-full" disabled={isLoading}>
+                                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                 {isEditing ? 'Cập nhật' : 'Tạo bài viết'}
                             </Button>
                         </div>

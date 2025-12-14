@@ -1,17 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Plus, Users as UsersIcon, AlertCircle } from 'lucide-react';
+import { Search, Plus, Users as UsersIcon } from 'lucide-react';
 import { User } from '@/types';
 import { UserFormData } from '@/lib/validations';
-import { PaginationMeta } from '@/types/globalClass';
+
 import UserFormDialog from './UserFormDialog';
 import UserTableRow from './UserTableRow';
 import Pagination from '@/components/ui/pagination';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
-import { userService } from '@/services/userService';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useUsers, useCreateUser, useUpdateUser, useDeleteUser } from '@/hooks/queries/useUsersQuery';
+
+import { useToast } from '@/components/ui/use-toast';
 import { Role } from '@/types/enum';
 
 const UsersPage: React.FC = () => {
@@ -20,47 +21,31 @@ const UsersPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'active' | 'inactive'>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [users, setUsers] = useState<User[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Mutations
+  const createUserMutation = useCreateUser();
+  const updateUserMutation = useUpdateUser();
+  const deleteUserMutation = useDeleteUser();
+
+  // Use TanStack Query
+  const { data: response, isLoading, isError } = useUsers({
+    page: currentPage,
+    limit: 10,
+    role: selectedRole !== 'all' ? selectedRole : undefined,
+    status: selectedStatus !== 'all' ? selectedStatus : undefined,
+    search: searchTerm || undefined,
+  });
+
+  const users = response?.data || [];
+  const paginationMeta = response?.meta || {
     total: 0,
     pageNumber: 1,
     limitNumber: 10,
     totalPages: 1,
-  });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<string | null>(null);
-
-  // Fetch users on component mount or filters/page change
-  useEffect(() => {
-    fetchUsers();
-     
-  }, [currentPage, selectedRole, selectedStatus, searchTerm]);
-
-  const fetchUsers = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await userService.getAll({
-        page: currentPage,
-        limit: 10,
-        role: selectedRole !== 'all' ? selectedRole : undefined,
-        status: selectedStatus !== 'all' ? selectedStatus : undefined,
-        search: searchTerm || undefined,
-      });
-      
-      setUsers(response.data);
-      setPaginationMeta(response.meta);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Không thể tải danh sách người dùng';
-      setError(errorMessage);
-      console.error('Error fetching users:', err);
-      setUsers([]);
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handlePageChange = (page: number) => {
@@ -70,24 +55,30 @@ const UsersPage: React.FC = () => {
 
   // Handle form submit from UserFormDialog
   const handleFormSubmit = async (formData: UserFormData) => {
-    setError(null);
-
     try {
       if (editingUser) {
-        // Update existing user
-        await userService.update(editingUser.id, formData);
+        await updateUserMutation.mutateAsync({ id: editingUser.id, data: formData });
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật người dùng.",
+        });
       } else {
-        // Create new user
-        await userService.create(formData);
+        await createUserMutation.mutateAsync(formData);
+        toast({
+          title: "Thành công",
+          description: "Đã tạo người dùng mới.",
+        });
       }
-      
-      // Refresh the list to get updated data with pagination
-      await fetchUsers();
-      
+
       setEditingUser(null);
       setIsDialogOpen(false);
     } catch (error) {
-      // Error is already handled in UserFormDialog
+      console.error('Failed to save user:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể lưu thông tin người dùng.",
+        variant: "destructive",
+      });
       throw error;
     }
   };
@@ -106,16 +97,20 @@ const UsersPage: React.FC = () => {
     if (!userToDelete) return;
 
     try {
-      setError(null);
-      await userService.delete(userToDelete);
-      // Refresh the list to get updated data with pagination
-      await fetchUsers();
+      await deleteUserMutation.mutateAsync(userToDelete);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa người dùng.",
+      });
       setDeleteConfirmOpen(false);
       setUserToDelete(null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Không thể xóa người dùng';
-      setError(errorMessage);
       console.error('Error deleting user:', err);
+      toast({
+        title: "Lỗi",
+        description: "Không thể xóa người dùng.",
+        variant: "destructive",
+      });
       setDeleteConfirmOpen(false);
       setUserToDelete(null);
     }
@@ -124,18 +119,14 @@ const UsersPage: React.FC = () => {
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-    setEditingUser(null);
-      setError(null);
+      setEditingUser(null);
     }
   };
 
-  if (isLoading) {
+  if (isError) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center space-y-4">
-          <LoadingSpinner size="lg" />
-          <p className="text-gray-600 dark:text-gray-400">Đang tải danh sách người dùng...</p>
-        </div>
+        <p className="text-red-500">Error loading users.</p>
       </div>
     );
   }
@@ -164,24 +155,7 @@ const UsersPage: React.FC = () => {
         />
       </div>
 
-      {error && (
-        <Card className="border-red-500 bg-red-50 dark:bg-red-900/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2 text-red-600 dark:text-red-400">
-              <AlertCircle className="h-5 w-5" />
-              <p className="font-medium">{error}</p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={fetchUsers}
-                className="ml-auto"
-              >
-                Thử lại
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       {/* Stats Card */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -247,7 +221,7 @@ const UsersPage: React.FC = () => {
             <div className="flex-1">
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-                  <Input
+                <Input
                   placeholder="Tìm theo tên hoặc email..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -342,6 +316,7 @@ const UsersPage: React.FC = () => {
         confirmText="Xóa"
         cancelText="Hủy"
         variant="destructive"
+        isLoading={deleteUserMutation.isPending}
       />
     </div>
   );

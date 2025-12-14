@@ -3,48 +3,25 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { ArrowLeft } from "lucide-react";
 import { useNavigate, useParams } from "react-router-dom";
 import { Badge } from "@/components/ui/badge";
-import { useEffect, useState } from "react";
-import { Post } from "@/types";
-import { postService } from "@/services/postService";
+import { useState } from "react";
 import { useToast } from '@/components/ui/use-toast';
 import ConfirmDialog from "@/components/ui/confirm-dialog";
+import { usePost, useDeletePost } from "@/hooks/queries/usePostsQuery";
 
 export default function PostDetailPage() {
     const navigate = useNavigate();
     const { id } = useParams();
-
-    const [post, setPost] = useState<any>(null);
-    const [loading, setLoading] = useState(true);
     const { toast } = useToast();
+
+    // Queries
+    const { data: post, isLoading: isLoadingPost, isError } = usePost(id);
+
+    // Mutations
+    const deletePostMutation = useDeletePost();
 
     //confirm for remove post
     const [isConfirmOpen, setIsConfirmOpen] = useState(false);
     const [selectedId, setSelectedId] = useState<string | null>(null);
-    const [isLoading, setIsLoading] = useState(false);
-
-    useEffect(() => {
-        const fetchPost = async () => {
-            try {
-                const response = await postService.findOne(id as string);
-                console.log(response);
-                if (response.data) {
-                    const postData = (response.data as any).data || response.data;
-                    const post = postData as Post;
-                    setPost(post);
-                    setLoading(false);
-                }
-            } catch (error) {
-                console.error('Failed to fetch post:', error);
-                toast({
-                    title: "Lỗi",
-                    description: "Không thể tải thông tin bài viết.",
-                    variant: "destructive",
-                });
-                navigate('/posts');
-            }
-        };
-        fetchPost();
-    }, [id]);
 
     const getStatusBadge = (status: string) => {
         switch (status) {
@@ -67,37 +44,32 @@ export default function PostDetailPage() {
     const handleConfirmDelete = async () => {
         if (!selectedId) return;
 
-        setIsLoading(true);
-
         try {
             console.log("Deleting:", selectedId);
-            try {
-                await postService.delete(id as string);
-                console.log("Deleted:", selectedId);
-                toast({
-                    title: "Thành công",
-                    description: "Đã xóa bài viết.",
-                });
-                navigate('/posts');
-            } catch (error) {
-                console.error('Failed to delete post:', error);
-                toast({
-                    title: "Lỗi",
-                    description: "Không thể xóa bài viết.",
-                    variant: "destructive",
-                });
-                navigate('/posts');
-            }
+            await deletePostMutation.mutateAsync(selectedId);
+            console.log("Deleted:", selectedId);
+            toast({
+                title: "Thành công",
+                description: "Đã xóa bài viết.",
+            });
+            navigate('/posts');
+        } catch (error) {
+            console.error('Failed to delete post:', error);
+            toast({
+                title: "Lỗi",
+                description: "Không thể xóa bài viết.",
+                variant: "destructive",
+            });
+            // Stay on page or navigate? Usually stay if error.
         } finally {
-            setIsLoading(false);
             setIsConfirmOpen(false);
             setSelectedId(null);
         }
     };
 
 
-    if (loading) return <p className="text-center py-10">Đang tải dữ liệu...</p>;
-    if (!post) return <p className="text-center py-10">Không tìm thấy bài viết.</p>;
+    if (isLoadingPost) return <p className="text-center py-10">Đang tải dữ liệu...</p>;
+    if (isError || !post) return <p className="text-center py-10">Không tìm thấy bài viết.</p>;
 
     return (
         <div className="space-y-6 max-w-8xl mx-auto">
@@ -178,7 +150,7 @@ export default function PostDetailPage() {
                 confirmText="Xoá"
                 cancelText="Hủy"
                 variant="destructive"
-                isLoading={isLoading}
+                isLoading={deletePostMutation.isPending}
             />
         </div>
     );

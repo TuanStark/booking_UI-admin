@@ -1,62 +1,66 @@
-import React, { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search, Plus } from 'lucide-react';
 import { Room } from '@/types';
 import { RoomFormData } from '@/lib/validations';
-import { PaginationMeta } from '@/types/globalClass';
+
 import RoomFormDialog from './RoomFormDialog';
 import RoomCard from './RoomCard';
 import Pagination from '@/components/ui/pagination';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
-import { roomService } from '@/services/roomService';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from '@/hooks/queries/useRoomsQuery';
+import { useToast } from '@/components/ui/use-toast';
 
-const RoomsPage: React.FC = () => {
+
+const RoomsPage = () => {
+
+  const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
-  const [rooms, setRooms] = useState<Room[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
-    total: 0,
-    pageNumber: 1,
-    limitNumber: 10,
-    totalPages: 1,
-  });
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [buildingFilter, setBuildingFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 8;
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [roomToDelete, setRoomToDelete] = useState<string | null>(null);
 
-  // Fetch rooms on component mount or page changes
-  useEffect(() => {
-    fetchRooms();
-     
-  }, [currentPage]);
+  // Mutations
+  const createRoomMutation = useCreateRoom();
+  const updateRoomMutation = useUpdateRoom();
+  const deleteRoomMutation = useDeleteRoom();
 
-  const fetchRooms = async () => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await roomService.getAll({
-        page: currentPage,
-        limit: 10,
-        search: searchTerm || undefined,
-      });
-      
-      setRooms(response.data);
-      setPaginationMeta(response.meta);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Không thể tải danh sách phòng';
-      setError(errorMessage);
-      console.error('Error fetching rooms:', err);
-      setRooms([]);
-    } finally {
-      setIsLoading(false);
-    }
+  // Use TanStack Query
+  const { data: response, isLoading, isError } = useRooms({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchTerm || undefined,
+  });
+
+  const rooms = response?.data || [];
+  const paginationMeta = response?.meta || {
+    total: 0,
+    pageNumber: 1,
+    limitNumber: itemsPerPage,
+    totalPages: 1,
   };
+
+  // Filter logic (client-side filtering of the current page)
+  const filteredRooms = rooms.filter(room => {
+    // Search is already handled by API, but we keep this if API search is partial or for status/building
+    // Actually API search handles name/buildingName usually.
+    // Let's keep status/building filter here.
+    const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
+    const matchesBuilding = buildingFilter === 'all' || room.buildingId === buildingFilter;
+    return matchesStatus && matchesBuilding;
+  });
+
+  // Get unique buildings for filter (from current page rooms - might be incomplete but matches previous logic)
+  // Or maybe we should fetch all buildings? For now stick to previous logic.
+  // const buildings = Array.from(new Set(rooms.map(r => JSON.stringify({ id: r.buildingId, name: r.buildingName }))))
+  //   .map(s => JSON.parse(s));
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -65,24 +69,32 @@ const RoomsPage: React.FC = () => {
 
   // Handle form submit from RoomFormDialog
   const handleFormSubmit = async (formData: RoomFormData & { imageFiles?: File[] }) => {
-    setError(null);
-
     try {
       if (editingRoom) {
-        // Update existing room
-        await roomService.update(editingRoom.id, formData);
+        await updateRoomMutation.mutateAsync({ id: editingRoom.id, data: formData });
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật phòng.",
+        });
       } else {
-        // Create new room
-        await roomService.create(formData);
+        await createRoomMutation.mutateAsync(formData);
+        toast({
+          title: "Thành công",
+          description: "Đã tạo phòng mới.",
+        });
       }
-      
-      // Refresh the list to get updated data with pagination
-      await fetchRooms();
-      
+
       setEditingRoom(null);
       setIsDialogOpen(false);
     } catch (error) {
-      // Error is already handled in RoomFormDialog
+      console.error('Failed to save room:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể lưu thông tin phòng.",
+        variant: "destructive",
+      });
+      // Error is already handled in RoomFormDialog? 
+      // If we throw here, RoomFormDialog might catch it.
       throw error;
     }
   };
@@ -101,16 +113,20 @@ const RoomsPage: React.FC = () => {
     if (!roomToDelete) return;
 
     try {
-      setError(null);
-      await roomService.delete(roomToDelete);
-      // Refresh the list to get updated data with pagination
-      await fetchRooms();
+      await deleteRoomMutation.mutateAsync(roomToDelete);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa phòng.",
+      });
       setDeleteConfirmOpen(false);
       setRoomToDelete(null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Không thể xóa phòng';
-      setError(errorMessage);
       console.error('Error deleting room:', err);
+      toast({
+        title: "Lỗi",
+        description: "Không thể xóa phòng.",
+        variant: "destructive",
+      });
       setDeleteConfirmOpen(false);
       setRoomToDelete(null);
     }
@@ -118,19 +134,13 @@ const RoomsPage: React.FC = () => {
 
   const handleSearch = () => {
     setCurrentPage(1);
-    fetchRooms();
+    // fetchRooms(); // No longer needed, filtering is client-side or handled by query params
   };
 
-  // Filter rooms locally by search term (client-side filtering for better UX)
-  const filteredRooms = rooms.filter(room =>
-    room.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    room.buildingName.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
-  if (isLoading && rooms.length === 0) {
+  if (isError) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <LoadingSpinner size="lg" />
+        <p className="text-red-500">Error loading rooms.</p>
       </div>
     );
   }
@@ -179,33 +189,10 @@ const RoomsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {error && (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-              <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                className="mt-2"
-                onClick={() => fetchRooms()}
-              >
-                Thử lại
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
-      {filteredRooms.length === 0 && !isLoading ? (
-        <Card>
-          <CardContent className="pt-6">
-            <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-              <p className="text-lg font-medium">Chưa có phòng nào</p>
-              <p className="text-sm mt-2">Nhấn "Thêm phòng" để bắt đầu</p>
-            </div>
-          </CardContent>
-        </Card>
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -238,7 +225,9 @@ const RoomsPage: React.FC = () => {
         confirmText="Xóa"
         cancelText="Hủy"
         variant="destructive"
+        isLoading={deleteRoomMutation.isPending}
       />
+
     </div>
   );
 };

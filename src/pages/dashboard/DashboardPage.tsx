@@ -1,5 +1,5 @@
 import React from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useDashboardStats } from '@/hooks/queries/useDashboardQuery';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {
@@ -25,7 +25,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from 'recharts';
-import { dashboardService, DashboardStats } from '@/services/dashboardService';
+
 import { Skeleton } from '@/components/ui/skeleton';
 
 // Loading skeleton component
@@ -93,12 +93,7 @@ const DashboardPage: React.FC = () => {
     isLoading,
     isError,
     refetch,
-  } = useQuery<DashboardStats>({
-    queryKey: ['dashboard-stats'],
-    queryFn: dashboardService.getStats,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-    refetchOnWindowFocus: false,
-  });
+  } = useDashboardStats();
 
   if (isLoading) {
     return <DashboardSkeleton />;

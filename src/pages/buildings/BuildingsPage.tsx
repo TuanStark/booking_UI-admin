@@ -1,86 +1,78 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Plus, Home, AlertCircle } from 'lucide-react';
+import { Search, Plus, Home } from 'lucide-react';
 import { Building } from '@/types';
 import { BuildingFormData } from '@/lib/validations';
-import { PaginationMeta } from '@/types/globalClass';
+
 import BuildingFormDialog from './BuildingFormDialog';
 import BuildingCard from './BuildingCard';
 import Pagination from '@/components/ui/pagination';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
-import { buildingService } from '@/services/buildingService';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useBuildings, useCreateBuilding, useUpdateBuilding, useDeleteBuilding } from '@/hooks/queries/useBuildingsQuery';
+
+import { useToast } from '@/components/ui/use-toast';
 
 const BuildingsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingBuilding, setEditingBuilding] = useState<Building | null>(null);
-  const [buildings, setBuildings] = useState<Building[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [paginationMeta, setPaginationMeta] = useState<PaginationMeta>({
+  const [currentPage, setCurrentPage] = useState(1);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
+  const { toast } = useToast();
+
+  // Mutations
+  const createBuildingMutation = useCreateBuilding();
+  const updateBuildingMutation = useUpdateBuilding();
+  const deleteBuildingMutation = useDeleteBuilding();
+
+  // Use TanStack Query
+  const { data: response, isLoading, isError } = useBuildings({
+    page: currentPage,
+    limit: 10,
+  });
+
+  const buildings = response?.data || [];
+  const paginationMeta = response?.meta || {
     total: 0,
     pageNumber: 1,
     limitNumber: 10,
     totalPages: 1,
-  });
-  const [currentPage, setCurrentPage] = useState(1);
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
-
-  // Fetch buildings on component mount or page change
-  useEffect(() => {
-    fetchBuildings(currentPage);
-  }, [currentPage]);
-
-  const fetchBuildings = async (page: number = 1) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-      const response = await buildingService.getAll({ page, limit: 10 });
-      
-      setBuildings(response.data);
-      setPaginationMeta(response.meta);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Không thể tải danh sách tòa nhà';
-      setError(errorMessage);
-      console.error('Error fetching buildings:', err);
-      setBuildings([]); // Set empty array on error
-    } finally {
-      setIsLoading(false);
-    }
   };
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
-    // Scroll to top when page changes
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   // Handle form submit from BuildingFormDialog
   const handleFormSubmit = async (formData: BuildingFormData & { imageFiles?: File[] }) => {
-    setError(null);
-
     try {
       if (editingBuilding) {
-        // Update existing building
-        const updatedBuilding = await buildingService.update(editingBuilding.id, formData);
-        setBuildings(buildings.map(b => 
-          b.id === editingBuilding.id ? updatedBuilding : b
-        ));
+        await updateBuildingMutation.mutateAsync({ id: editingBuilding.id, data: formData });
+        toast({
+          title: "Thành công",
+          description: "Đã cập nhật tòa nhà.",
+        });
       } else {
-        // Create new building
-        await buildingService.create(formData);
-        // Refresh the list to get updated data with pagination
-        await fetchBuildings(currentPage);
+        await createBuildingMutation.mutateAsync(formData);
+        toast({
+          title: "Thành công",
+          description: "Đã tạo tòa nhà mới.",
+        });
       }
-      
+
       setEditingBuilding(null);
       setIsDialogOpen(false);
     } catch (error) {
-      // Error is already handled in BuildingFormDialog
+      console.error('Failed to save building:', error);
+      toast({
+        title: "Lỗi",
+        description: "Không thể lưu thông tin tòa nhà.",
+        variant: "destructive",
+      });
       throw error;
     }
   };
@@ -99,16 +91,20 @@ const BuildingsPage: React.FC = () => {
     if (!buildingToDelete) return;
 
     try {
-      setError(null);
-      await buildingService.delete(buildingToDelete);
-      // Refresh the list to get updated data with pagination
-      await fetchBuildings(currentPage);
+      await deleteBuildingMutation.mutateAsync(buildingToDelete);
+      toast({
+        title: "Thành công",
+        description: "Đã xóa tòa nhà.",
+      });
       setDeleteConfirmOpen(false);
       setBuildingToDelete(null);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Không thể xóa tòa nhà';
-      setError(errorMessage);
       console.error('Error deleting building:', err);
+      toast({
+        title: "Lỗi",
+        description: "Không thể xóa tòa nhà.",
+        variant: "destructive",
+      });
       setDeleteConfirmOpen(false);
       setBuildingToDelete(null);
     }
@@ -118,26 +114,22 @@ const BuildingsPage: React.FC = () => {
     setIsDialogOpen(open);
     if (!open) {
       setEditingBuilding(null);
-      setError(null);
     }
   };
 
   // Quản lý phòng ở trang Rooms
 
-  const filteredBuildings = Array.isArray(buildings) 
+  const filteredBuildings = Array.isArray(buildings)
     ? buildings.filter(building =>
-        building.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        building.address.toLowerCase().includes(searchTerm.toLowerCase())
-      )
+      building.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      building.address.toLowerCase().includes(searchTerm.toLowerCase())
+    )
     : [];
 
-  if (isLoading) {
+  if (isError) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center space-y-4">
-          <LoadingSpinner size="lg" />
-          <p className="text-gray-600 dark:text-gray-400">Đang tải danh sách tòa nhà...</p>
-        </div>
+        <p className="text-red-500">Error loading buildings.</p>
       </div>
     );
   }
@@ -165,24 +157,7 @@ const BuildingsPage: React.FC = () => {
         />
       </div>
 
-      {error && (
-        <Card className="border-red-500 bg-red-50 dark:bg-red-900/20">
-          <CardContent className="pt-6">
-            <div className="flex items-center space-x-2 text-red-600 dark:text-red-400">
-              <AlertCircle className="h-5 w-5" />
-              <p className="font-medium">{error}</p>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => fetchBuildings(currentPage)}
-                className="ml-auto"
-              >
-                Thử lại
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -216,7 +191,11 @@ const BuildingsPage: React.FC = () => {
         </CardContent>
       </Card>
 
-      {filteredBuildings.length === 0 ? (
+      {isLoading ? (
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      ) : filteredBuildings.length === 0 ? (
         <Card>
           <CardContent className="pt-6">
             <div className="text-center py-8 text-gray-500 dark:text-gray-400">
@@ -263,7 +242,9 @@ const BuildingsPage: React.FC = () => {
         confirmText="Xóa"
         cancelText="Hủy"
         variant="destructive"
+        isLoading={deleteBuildingMutation.isPending}
       />
+
     </div>
   );
 };

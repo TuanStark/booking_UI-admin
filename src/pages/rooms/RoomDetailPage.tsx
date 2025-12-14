@@ -1,40 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home, Users, DollarSign, Calendar, Wifi, Tv, Wind } from 'lucide-react';
-import { Room } from '@/types';
-import { roomService } from '@/services/roomService';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useRoom } from '@/hooks/queries/useRoomsQuery';
 
 const RoomDetailPage: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
 
-  const [room, setRoom] = useState<Room | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    const fetchRoom = async () => {
-      if (!id) return;
-
-      try {
-        setIsLoading(true);
-        setError(null);
-        const roomData = await roomService.getById(id);
-        setRoom(roomData);
-      } catch (err) {
-        const errorMessage = err instanceof Error ? err.message : 'Không thể tải thông tin phòng';
-        setError(errorMessage);
-        console.error('Error fetching room:', err);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchRoom();
-  }, [id]);
+  const { data: room, isLoading, isError } = useRoom(id);
 
   if (isLoading) {
     return (
@@ -44,7 +20,7 @@ const RoomDetailPage: React.FC = () => {
     );
   }
 
-  if (error || !room) {
+  if (isError || !room) {
     return (
       <div className="space-y-4">
         <Button variant="outline" onClick={() => navigate('/rooms')}>
@@ -52,7 +28,7 @@ const RoomDetailPage: React.FC = () => {
         </Button>
         <Card>
           <CardContent className="py-10 text-center text-gray-600 dark:text-gray-400">
-            {error || 'Không tìm thấy phòng'}
+            {'Không tìm thấy phòng'}
           </CardContent>
         </Card>
       </div>
@@ -83,15 +59,14 @@ const RoomDetailPage: React.FC = () => {
             )}
           </div>
         </div>
-        <span className={`px-4 py-2 rounded-full text-sm font-medium ${
-          room.status === 'AVAILABLE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
-          room.status === 'BOOKED' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
-          room.status === 'MAINTENANCE' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
-          'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
-        }`}>
-          {room.status === 'AVAILABLE' ? 'Còn trống' : 
-           room.status === 'BOOKED' ? 'Đã đặt' : 
-           room.status === 'MAINTENANCE' ? 'Bảo trì' : 'Vô hiệu hóa'}
+        <span className={`px-4 py-2 rounded-full text-sm font-medium ${room.status === 'AVAILABLE' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' :
+            room.status === 'BOOKED' ? 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400' :
+              room.status === 'MAINTENANCE' ? 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' :
+                'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
+          }`}>
+          {room.status === 'AVAILABLE' ? 'Còn trống' :
+            room.status === 'BOOKED' ? 'Đã đặt' :
+              room.status === 'MAINTENANCE' ? 'Bảo trì' : 'Vô hiệu hóa'}
         </span>
       </div>
 

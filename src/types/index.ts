@@ -168,6 +168,7 @@ export interface Post {
   views: number;
   createdAt: string;
   updatedAt: string;
+  publishedAt?: string;
 }
 
 export interface CreatePostDto {

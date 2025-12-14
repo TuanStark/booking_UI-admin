@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogTrigger 
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Plus, X } from 'lucide-react';
@@ -15,8 +15,8 @@ import { RoomFormData } from '@/lib/validations';
 import { useFormValidation } from '@/hooks/useFormValidation';
 import { roomSchema } from '@/lib/validations';
 import ImageUpload from '@/components/ImageUpload';
-import { buildingService } from '@/services/buildingService';
-import { Building } from '@/types';
+import { useBuildings } from '@/hooks/queries/useBuildingsQuery';
+
 
 interface RoomFormDialogProps {
   isOpen: boolean;
@@ -50,26 +50,15 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
   });
   // Store File objects separately for FormData submission
   const [imageFiles, setImageFiles] = useState<(File | string | null)[]>([]);
-  const [buildings, setBuildings] = useState<Building[]>([]);
-  const [isLoadingBuildings, setIsLoadingBuildings] = useState(false);
-  
-  const { errors, validate, clearErrors, clearFieldError } = useFormValidation(roomSchema);
 
+  const { errors, validate, clearErrors, clearFieldError } = useFormValidation(roomSchema);
   // Load buildings for dropdown
-  useEffect(() => {
-    const loadBuildings = async () => {
-      try {
-        setIsLoadingBuildings(true);
-        const response = await buildingService.getAll();
-        setBuildings(response.data);
-      } catch (err) {
-        console.error('Error loading buildings:', err);
-      } finally {
-        setIsLoadingBuildings(false);
-      }
-    };
-    loadBuildings();
-  }, []);
+  const { data: buildingsResponse, isLoading: isLoadingBuildings } = useBuildings({
+    page: 1,
+    limit: 100, // Fetch enough buildings for the dropdown
+  });
+
+  const buildings = buildingsResponse?.data || [];
 
   // Load room data when editing
   useEffect(() => {
@@ -109,21 +98,21 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
       setImageFiles([]);
     }
     clearErrors();
-     
+
   }, [room]);
 
   // Sync imageFiles array length with formData.images length
   useEffect(() => {
     const imagesLength = formData.images?.length || 0;
     const filesLength = imageFiles.length;
-    
+
     if (imagesLength !== filesLength) {
       console.log('Syncing imageFiles array:', {
         imagesLength,
         filesLength,
         needSync: imagesLength !== filesLength
       });
-      
+
       const newFiles = [...imageFiles];
       // Extend array if needed
       while (newFiles.length < imagesLength) {
@@ -143,7 +132,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
       ...prev,
       [name]: type === 'number' ? parseInt(value) || 0 : value
     }));
-    
+
     // Clear error when user starts typing
     if (errors[name]) {
       clearFieldError(name);
@@ -164,20 +153,20 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (!validate(formData)) return;
-    
+
     try {
       setIsSubmitting(true);
       setSubmitError(null);
-      
+
       // Prepare data with File objects instead of preview URLs
       // Filter out null values and keep only File objects
       const filesToUpload = imageFiles.filter((file): file is File => file instanceof File);
-      
+
       console.log('Current imageFiles state:', imageFiles);
       console.log('Filtered files to upload:', filesToUpload);
-      
+
       const submitData = {
         name: formData.name,
         capacity: formData.capacity,
@@ -193,31 +182,31 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
         amenities: formData.amenities || [],
         imageFiles: filesToUpload,
       };
-      
+
       console.log('Submitting data:', {
         name: submitData.name,
         buildingId: submitData.buildingId,
         imageFilesCount: filesToUpload.length,
         imageFiles: filesToUpload.map(f => ({ name: f.name, size: f.size, type: f.type }))
       });
-      
+
       await onSubmit(submitData);
-      
+
       // Reset form and close dialog on success
       if (!room) {
-        setFormData({ 
-          name: '', 
-          capacity: 1, 
-          price: 0, 
+        setFormData({
+          name: '',
+          capacity: 1,
+          price: 0,
           squareMeter: 0,
           bedCount: 1,
           bathroomCount: 1,
           floor: 1,
           countCapacity: 0,
           status: 'AVAILABLE',
-          buildingId: '', 
-          description: '', 
-          amenities: [] 
+          buildingId: '',
+          description: '',
+          amenities: []
         });
         setImageFiles([]);
       }
@@ -234,19 +223,19 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
   const handleDialogOpenChange = (open: boolean) => {
     onOpenChange(open);
     if (!open) {
-      setFormData({ 
-        name: '', 
-        capacity: 1, 
-        price: 0, 
+      setFormData({
+        name: '',
+        capacity: 1,
+        price: 0,
         squareMeter: 0,
         bedCount: 1,
         bathroomCount: 1,
         floor: 1,
         countCapacity: 0,
         status: 'AVAILABLE',
-        buildingId: '', 
-        description: '', 
-        amenities: [] 
+        buildingId: '',
+        description: '',
+        amenities: []
       });
       setImageFiles([]);
       clearErrors();
@@ -262,14 +251,14 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
       currentImagesLength: formData.images?.length || 0,
       imageData: imageData instanceof File ? { name: imageData.name, size: imageData.size } : imageData
     });
-    
+
     const currentImages = formData.images || [];
     // Ensure imageFiles array is large enough
     let currentFiles = [...imageFiles];
     while (currentFiles.length < currentImages.length) {
       currentFiles.push(null);
     }
-    
+
     if (imageData === '') {
       // Remove image
       const newImages = currentImages.filter((_, i) => i !== index);
@@ -303,7 +292,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
         }))
       });
       setImageFiles(newFiles); // Update state immediately
-      
+
       const reader = new FileReader();
       reader.onload = (e) => {
         const previewUrl = e.target?.result as string;
@@ -322,13 +311,13 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
   const handleAddImageSlot = () => {
     const currentImages = formData.images || [];
     const currentFiles = imageFiles.length > 0 ? [...imageFiles] : new Array(currentImages.length).fill(null);
-    
+
     console.log('Adding image slot:', {
       currentImagesLength: currentImages.length,
       currentFilesLength: currentFiles.length,
       currentFiles: currentFiles
     });
-    
+
     setFormData(prev => ({
       ...prev,
       images: [...currentImages, '']
@@ -343,32 +332,32 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
 
     const currentImages = formData.images || [];
     const currentFiles = [...imageFiles];
-    
+
     // Extend arrays to accommodate new files
     const newImages = [...currentImages];
     const newFiles = [...currentFiles];
-    
+
     const fileArray = Array.from(files).filter(file => file.type.match('image.*'));
     const startIndex = newImages.length;
-    
+
     // Add placeholders for all files first
     fileArray.forEach(() => {
       newImages.push('');
       newFiles.push(null);
     });
-    
+
     // Update state with placeholders first
     setFormData(prev => ({
       ...prev,
       images: newImages
     }));
     setImageFiles(newFiles);
-    
+
     // Then process each file and update preview
     fileArray.forEach((file, fileIndex) => {
       const actualIndex = startIndex + fileIndex;
       newFiles[actualIndex] = file;
-      
+
       // Create preview
       const reader = new FileReader();
       reader.onload = (e) => {
@@ -381,10 +370,10 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
       };
       reader.readAsDataURL(file);
     });
-    
+
     // Update files array
     setImageFiles(newFiles);
-    
+
     // Reset input
     e.target.value = '';
   };
@@ -414,8 +403,8 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="name">Tên phòng *</Label>
-                <Input 
-                  id="name" 
+                <Input
+                  id="name"
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
@@ -473,10 +462,10 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="price">Giá (USD/tháng) *</Label>
-                <Input 
-                  id="price" 
+                <Input
+                  id="price"
                   name="price"
-                  type="number" 
+                  type="number"
                   value={formData.price}
                   onChange={handleInputChange}
                   className={errors.price ? 'border-red-500 focus:border-red-500' : ''}
@@ -487,10 +476,10 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="capacity">Sức chứa *</Label>
-                <Input 
-                  id="capacity" 
+                <Input
+                  id="capacity"
                   name="capacity"
-                  type="number" 
+                  type="number"
                   value={formData.capacity}
                   onChange={handleInputChange}
                   className={errors.capacity ? 'border-red-500 focus:border-red-500' : ''}
@@ -501,10 +490,10 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="countCapacity">Số lượng hiện tại</Label>
-                <Input 
-                  id="countCapacity" 
+                <Input
+                  id="countCapacity"
                   name="countCapacity"
-                  type="number" 
+                  type="number"
                   value={formData.countCapacity}
                   onChange={handleInputChange}
                   className={errors.countCapacity ? 'border-red-500 focus:border-red-500' : ''}
@@ -522,10 +511,10 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="grid gap-2">
                 <Label htmlFor="squareMeter">Diện tích (m²)</Label>
-                <Input 
-                  id="squareMeter" 
+                <Input
+                  id="squareMeter"
                   name="squareMeter"
-                  type="number" 
+                  type="number"
                   step="0.01"
                   value={formData.squareMeter}
                   onChange={handleInputChange}
@@ -537,10 +526,10 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="bedCount">Số giường</Label>
-                <Input 
-                  id="bedCount" 
+                <Input
+                  id="bedCount"
                   name="bedCount"
-                  type="number" 
+                  type="number"
                   value={formData.bedCount}
                   onChange={handleInputChange}
                   className={errors.bedCount ? 'border-red-500 focus:border-red-500' : ''}
@@ -551,10 +540,10 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="bathroomCount">Số phòng tắm</Label>
-                <Input 
-                  id="bathroomCount" 
+                <Input
+                  id="bathroomCount"
                   name="bathroomCount"
-                  type="number" 
+                  type="number"
                   value={formData.bathroomCount}
                   onChange={handleInputChange}
                   className={errors.bathroomCount ? 'border-red-500 focus:border-red-500' : ''}
@@ -565,10 +554,10 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="floor">Tầng</Label>
-                <Input 
-                  id="floor" 
+                <Input
+                  id="floor"
                   name="floor"
-                  type="number" 
+                  type="number"
                   value={formData.floor}
                   onChange={handleInputChange}
                   className={errors.floor ? 'border-red-500 focus:border-red-500' : ''}
@@ -632,9 +621,9 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                   id="multiple-image-input"
                 />
                 <label htmlFor="multiple-image-input">
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     asChild
                   >
@@ -644,9 +633,9 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                     </span>
                   </Button>
                 </label>
-                <Button 
-                  type="button" 
-                  variant="outline" 
+                <Button
+                  type="button"
+                  variant="outline"
                   size="sm"
                   onClick={handleAddImageSlot}
                 >
@@ -661,8 +650,8 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                   <div key={index} className="relative group">
                     <div className="aspect-video w-full rounded-lg border-2 border-gray-200 dark:border-gray-700 overflow-hidden bg-gray-50 dark:bg-gray-800">
                       {image ? (
-                        <img 
-                          src={image} 
+                        <img
+                          src={image}
                           alt={`Room image ${index + 1}`}
                           className="w-full h-full object-cover"
                         />
@@ -703,9 +692,9 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                     id="multiple-image-input-empty"
                   />
                   <label htmlFor="multiple-image-input-empty">
-                    <Button 
-                      type="button" 
-                      variant="outline" 
+                    <Button
+                      type="button"
+                      variant="outline"
                       size="sm"
                       asChild
                     >
@@ -715,9 +704,9 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                       </span>
                     </Button>
                   </label>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
+                  <Button
+                    type="button"
+                    variant="outline"
                     size="sm"
                     onClick={handleAddImageSlot}
                   >
@@ -734,9 +723,9 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
             </div>
           )}
           <div className="flex justify-end space-x-2 pt-2">
-            <Button 
-              type="button" 
-              variant="outline" 
+            <Button
+              type="button"
+              variant="outline"
               onClick={() => handleDialogOpenChange(false)}
               disabled={isSubmitting}
             >
