@@ -28,7 +28,8 @@ export default function PostDetailPage() {
                 const response = await postService.findOne(id as string);
                 console.log(response);
                 if (response.data) {
-                    const post = response.data as Post;
+                    const postData = (response.data as any).data || response.data;
+                    const post = postData as Post;
                     setPost(post);
                     setLoading(false);
                 }

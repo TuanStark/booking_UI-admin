@@ -50,7 +50,15 @@ const PostFormPage = () => {
             try {
                 const response = await categoryService.findAll();
                 if (response.data) {
-                    setCategories(response.data as PostCategory[]);
+                    if (Array.isArray(response.data)) {
+                        setCategories(response.data as PostCategory[]);
+                    } else if (Array.isArray((response.data as any).data)) {
+                        setCategories((response.data as any).data as PostCategory[]);
+                    } else {
+                        setCategories([]);
+                    }
+                } else {
+                    setCategories([]);
                 }
             } catch (error) {
                 console.error('Failed to fetch categories:', error);
@@ -72,7 +80,30 @@ const PostFormPage = () => {
                     const response = await postService.findOne(id);
                     console.log(response);
                     if (response.data) {
-                        const post = response.data as Post;
+                        // Check if data is nested (response.data.data) or direct (response.data)
+                        // The API seems to return { data: { data: Post, ... }, ... } based on user report
+                        // But let's handle both cases safely.
+                        // Based on user JSON: { data: { data: { id: ... } } }
+                        // response from service is likely the outer object.
+                        // Wait, service.findOne returns ResponseData<Post>.
+                        // If service returns `await response.json()`, and that json is the user provided json:
+                        // { data: { data: { ... } }, statusCode: 200, ... }
+                        // Then response.data is { data: { ... } } ?? No.
+                        // User JSON: { data: { data: { ... } }, statusCode: 200 ... }
+                        // If this is the raw response, then `response.data` in `PostFormPage` (which is `ResponseData<Post>`)
+                        // corresponds to the outer `data` field of the JSON?
+                        // Let's look at `postService.ts`: `return await response.json();`
+                        // So `response` in `PostFormPage` IS the JSON object.
+                        // `response.data` IS the `data` field of that JSON.
+                        // The user says: "data": { "data": { ... } }
+                        // So `response.data` is `{ data: { ... } }`?
+                        // Or maybe the user meant the whole response is `{ data: { data: ... } }`?
+                        // "data": { "data": { ... } } looks like the `data` field contains another `data` field.
+
+                        // Let's try to be robust.
+                        const postData = (response.data as any).data || response.data;
+                        const post = postData as Post;
+
                         setFormData({
                             title: post.title,
                             content: post.content,
@@ -244,7 +275,7 @@ const PostFormPage = () => {
                                             <SelectValue placeholder="Chọn danh mục" />
                                         </SelectTrigger>
                                         <SelectContent>
-                                            {categories.map((category) => (
+                                            {Array.isArray(categories) && categories.map((category) => (
                                                 <SelectItem key={category.id} value={category.id}>
                                                     {category.name}
                                                 </SelectItem>
