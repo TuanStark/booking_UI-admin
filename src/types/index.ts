@@ -38,6 +38,11 @@ export interface Building {
   name: string;
   address: string;
   images: string[];
+  city: string;
+  country: string;
+  description?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Booking {

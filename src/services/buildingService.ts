@@ -128,6 +128,9 @@ class BuildingService {
       id: building.id,
       name: building.name,
       address: building.address,
+      city: building.city,
+      country: building.country,
+      description: building.description,
       images: building.images
         ? (Array.isArray(building.images) ? building.images : [building.images])
         : [],
@@ -170,6 +173,11 @@ class BuildingService {
     // Add text fields
     formData.append('name', data.name);
     formData.append('address', data.address);
+    formData.append('city', data.city);
+    formData.append('country', data.country);
+    if (data.description) {
+      formData.append('description', data.description);
+    }
 
     // Add image files - use only the first file as backend expects single file
     // Backend uses FileInterceptor('file') which expects a single file
@@ -218,6 +226,11 @@ class BuildingService {
     // Add text fields
     formData.append('name', data.name);
     formData.append('address', data.address);
+    formData.append('city', data.city);
+    formData.append('country', data.country);
+    if (data.description) {
+      formData.append('description', data.description);
+    }
 
     // Add image files if provided
     if (data.imageFiles && data.imageFiles.length > 0) {

@@ -51,6 +51,15 @@ export const buildingSchema = z.object({
     .min(5, 'Địa chỉ phải có ít nhất 5 ký tự')
     .max(200, 'Địa chỉ không được vượt quá 200 ký tự'),
   images: z.array(z.string()).optional(),
+  city: z.enum(['Đà Nẵng', 'TP HCM', 'Hà Nội']),
+  country: z
+    .string()
+    .optional()
+    .default('Việt Nam'),
+  description: z
+    .string()
+    .max(500, 'Mô tả không được vượt quá 500 ký tự')
+    .optional(),
 });
 
 // Room schemas

@@ -9,6 +9,14 @@ import {
   DialogTrigger
 } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Plus, X } from 'lucide-react';
 import { Building } from '@/types';
 import { BuildingFormData } from '@/lib/validations';
@@ -34,12 +42,16 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
   const [formData, setFormData] = useState<BuildingFormData>({
     name: '',
     address: '',
+    city: '' as BuildingFormData['city'],
+    country: '',
+    description: '',
     images: [],
   });
   // Store File objects separately for FormData submission
   const [imageFiles, setImageFiles] = useState<(File | string | null)[]>([]);
 
   const { errors, validate, clearErrors, clearFieldError } = useFormValidation(buildingSchema);
+  const CITIES = ['Đà Nẵng', 'TP HCM', 'Hà Nội'];
 
   // Load building data when editing
   useEffect(() => {
@@ -48,6 +60,9 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
       setFormData({
         name: building.name,
         address: building.address,
+        city: building.city as BuildingFormData['city'],
+        country: building.country,
+        description: building.description || '',
         images: buildingImages,
       });
       // For existing buildings, images are URLs (strings)
@@ -56,6 +71,9 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
       setFormData({
         name: '',
         address: '',
+        city: '' as BuildingFormData['city'],
+        country: 'Việt Nam',
+        description: '',
         images: [],
       });
       setImageFiles([]);
@@ -131,6 +149,9 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
       const submitData = {
         name: formData.name,
         address: formData.address,
+        city: formData.city,
+        country: formData.country,
+        description: formData.description,
         images: [], // Don't send preview URLs
         imageFiles: filesToUpload,
       };
@@ -146,7 +167,7 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
 
       // Reset form and close dialog on success
       if (!building) {
-        setFormData({ name: '', address: '', images: [] });
+        setFormData({ name: '', address: '', city: '' as BuildingFormData['city'], country: 'Việt Nam', description: '', images: [] });
         setImageFiles([]);
       }
       onOpenChange(false);
@@ -162,7 +183,7 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
   const handleDialogOpenChange = (open: boolean) => {
     onOpenChange(open);
     if (!open) {
-      setFormData({ name: '', address: '', images: [] });
+      setFormData({ name: '', address: '', city: '' as BuildingFormData['city'], country: 'Việt Nam', description: '', images: [] });
       setImageFiles([]);
       clearErrors();
     }
@@ -289,6 +310,58 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
             />
             {errors.address && (
               <p className="text-sm text-red-600">{errors.address}</p>
+            )}
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="grid gap-2">
+              <Label htmlFor="city">Thành phố</Label>
+              <Select
+                value={formData.city}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, city: value as BuildingFormData['city'] }));
+                  if (errors.city) clearFieldError('city');
+                }}
+              >
+                <SelectTrigger className={errors.city ? 'border-red-500' : ''}>
+                  <SelectValue placeholder="Chọn thành phố" />
+                </SelectTrigger>
+                <SelectContent>
+                  {CITIES.map((city) => (
+                    <SelectItem key={city} value={city}>
+                      {city}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              {errors.city && (
+                <p className="text-sm text-red-600">{errors.city}</p>
+              )}
+            </div>
+            <div className="grid gap-2">
+              <Label htmlFor="country">Quốc gia</Label>
+              <Input
+                id="country"
+                name="country"
+                value={formData.country}
+                onChange={handleInputChange}
+                className={errors.country ? 'border-red-500 focus:border-red-500' : ''}
+              />
+              {errors.country && (
+                <p className="text-sm text-red-600">{errors.country}</p>
+              )}
+            </div>
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="description">Mô tả</Label>
+            <Textarea
+              id="description"
+              name="description"
+              value={formData.description || ''}
+              onChange={handleInputChange}
+              className={errors.description ? 'border-red-500 focus:border-red-500' : ''}
+            />
+            {errors.description && (
+              <p className="text-sm text-red-600">{errors.description}</p>
             )}
           </div>
           <div className="grid gap-4">
