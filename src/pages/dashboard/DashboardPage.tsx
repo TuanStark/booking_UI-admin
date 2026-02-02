@@ -103,18 +103,29 @@ const DashboardPage: React.FC = () => {
     return <DashboardError onRetry={() => refetch()} />;
   }
 
-  // Extract data with fallbacks
-  const totalUsers = stats.users?.totalUsers ?? 0;
-  const userGrowth = stats.users?.userGrowth ?? 0;
-  const totalRooms = stats.rooms?.totalRooms ?? 0;
-  const availableRooms = stats.rooms?.availableRooms ?? 0;
-  const occupancyRate = stats.rooms?.occupancyRate ?? 0;
-  const totalBookings = stats.bookings?.totalBookings ?? 0;
-  const bookingGrowth = stats.bookings?.bookingGrowth ?? 0;
-  const totalRevenue = stats.payments?.totalRevenue ?? 0;
-  const revenueGrowth = stats.payments?.revenueGrowth ?? 0;
-  const monthlyBookings = stats.bookings?.monthlyBookings ?? [];
-  const monthlyRevenue = stats.payments?.monthlyRevenue ?? [];
+  // Helper to safely extract nested stats (handles empty string from API)
+  const safeStats = <T,>(data: T | null | undefined | string): T | null => {
+    if (!data || data === '' || typeof data !== 'object') return null;
+    return data;
+  };
+
+  // Extract data with fallbacks (safely handle empty string responses)
+  const users = safeStats(stats.users);
+  const rooms = safeStats(stats.rooms);
+  const bookings = safeStats(stats.bookings);
+  const payments = safeStats(stats.payments);
+
+  const totalUsers = users?.totalUsers ?? 0;
+  const userGrowth = users?.userGrowth ?? 0;
+  const totalRooms = rooms?.totalRooms ?? 0;
+  const availableRooms = rooms?.availableRooms ?? 0;
+  const occupancyRate = rooms?.occupancyRate ?? 0;
+  const totalBookings = bookings?.totalBookings ?? 0;
+  const bookingGrowth = bookings?.bookingGrowth ?? 0;
+  const totalRevenue = payments?.totalRevenue ?? 0;
+  const revenueGrowth = payments?.revenueGrowth ?? 0;
+  const monthlyBookings = bookings?.monthlyBookings ?? [];
+  const monthlyRevenue = payments?.monthlyRevenue ?? [];
 
   const occupancyData = [
     { name: 'Occupied', value: occupancyRate },
@@ -172,10 +183,10 @@ const DashboardPage: React.FC = () => {
     },
     {
       title: 'Thanh toán thành công',
-      value: (stats.payments?.successPayments ?? 0).toLocaleString(),
+      value: (payments?.successPayments ?? 0).toLocaleString(),
       icon: TrendingUp,
       color: 'bg-pink-100 text-pink-600',
-      change: `${stats.payments?.pendingPayments ?? 0} đang chờ`,
+      change: `${payments?.pendingPayments ?? 0} đang chờ`,
       trend: 'neutral',
     },
   ];

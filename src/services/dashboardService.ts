@@ -3,7 +3,7 @@
  */
 
 const API_BASE_URL =
-    import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+    import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 // Types matching the backend response
 export interface UserStats {
@@ -105,7 +105,7 @@ class DashboardService {
             const result: DashboardResponse = await response.json();
             return result.data;
         } catch (error) {
-            console.error('Failed to fetch dashboard stats:', error);
+            console.error('[DashboardService] Failed to fetch:', error);
             throw error;
         }
     }

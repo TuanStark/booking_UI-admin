@@ -2,7 +2,7 @@
 import { AuthResponse, LoginCredentials, RefreshTokenResponse, RegisterData, User } from '@/types';
 import { ResponseData } from '@/types/globalClass';
 
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 class AuthService {
   private baseURL: string;
@@ -16,7 +16,7 @@ class AuthService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const defaultHeaders = {
       'Content-Type': 'application/json',
     };
@@ -31,7 +31,7 @@ class AuthService {
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -51,7 +51,7 @@ class AuthService {
     options: RequestInit = {}
   ): Promise<T> {
     const token = localStorage.getItem('auth_token');
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -75,7 +75,7 @@ class AuthService {
   }
 
   async register(data: RegisterData): Promise<AuthResponse> {
-    
+
     return this.request<AuthResponse>('/register', {
       method: 'POST',
       body: JSON.stringify(data),
