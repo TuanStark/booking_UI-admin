@@ -78,14 +78,25 @@ export interface Payment {
 export interface Review {
   id: string;
   userId: string;
-  userName: string;
   roomId: string;
-  roomNumber: string;
-  buildingName: string;
-  rating: number;
-  comment: string;
+  bookingId: string;
+  ratingOverall: number;
+  ratingClean?: number;
+  ratingLocation?: number;
+  ratingPrice?: number;
+  ratingService?: number;
+  comment?: string;
+  status: 'VISIBLE' | 'HIDDEN' | 'DELETED';
   createdAt: string;
-  isVisible: boolean;
+  updatedAt: string;
+  user?: {
+    id: string;
+    name: string;
+    avatar?: string;
+  };
+  // Optional fields if we manage to fetch them
+  roomNumber?: string;
+  buildingName?: string;
 }
 
 export interface DashboardStats {
@@ -219,4 +230,4 @@ export interface CreateCategoryDto {
 export interface UpdateCategoryDto {
   name?: string;
   description?: string;
-}
+}export type ReviewStatus = 'VISIBLE' | 'HIDDEN' | 'DELETED';
