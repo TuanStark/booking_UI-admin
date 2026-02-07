@@ -1,6 +1,6 @@
 
 import { Review } from '@/types';
-import { PaginationMeta, PaginatedResponse } from '@/types/globalClass';
+import { PaginatedResponse } from '@/types/globalClass';
 
 export interface GetReviewsParams {
     page?: number;
