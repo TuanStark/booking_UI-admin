@@ -13,6 +13,11 @@ export interface User {
   avatar?: string;
 }
 
+export interface RoomImage {
+  id: string;
+  imageUrl: string;
+}
+
 export interface Room {
   id: string;
   name: string;
@@ -27,6 +32,7 @@ export interface Room {
   buildingId: string;
   buildingName: string;
   images: string[];
+  imageObjects: RoomImage[];
   amenities: string[];
   description?: string;
   createdAt?: string;

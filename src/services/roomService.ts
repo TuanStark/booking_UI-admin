@@ -25,7 +25,7 @@ class RoomService {
     options: RequestInit = {}
   ): Promise<T> {
     const url = `${this.baseURL}${endpoint}`;
-    
+
     const defaultHeaders: Record<string, string> = {
       'Content-Type': 'application/json',
     };
@@ -40,7 +40,7 @@ class RoomService {
 
     try {
       const response = await fetch(url, config);
-      
+
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
@@ -75,7 +75,7 @@ class RoomService {
     options: RequestInit = {}
   ): Promise<T> {
     const token = localStorage.getItem('auth_token');
-    
+
     if (!token) {
       throw new Error('No authentication token found');
     }
@@ -109,11 +109,11 @@ class RoomService {
     if (params?.search) {
       queryParams.append('search', params.search);
     }
-    
+
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/?${queryString}` : '/';
     const response = await this.authenticatedRequest<any>(endpoint);
-    
+
     // Handle nested response structure: { data: { data: [...], meta: {...} }, statusCode, message }
     let roomsData: any[] = [];
     let meta: PaginationMeta = {
@@ -122,7 +122,7 @@ class RoomService {
       limitNumber: 10,
       totalPages: 1,
     };
-    
+
     if (response?.data?.data && Array.isArray(response.data.data)) {
       // Nested structure: { data: { data: [...], meta: {...} }, statusCode, message }
       roomsData = response.data.data;
@@ -156,7 +156,7 @@ class RoomService {
 
     const transformed = roomsData.map((room: any) => this.transformRoom(room));
     console.log('Transformed rooms:', transformed.length);
-    
+
     return {
       data: transformed,
       meta: meta,
@@ -177,7 +177,7 @@ class RoomService {
    */
   async create(data: RoomFormData & { imageFiles?: File[] }): Promise<Room> {
     const formData = new FormData();
-    
+
     // Add text fields
     formData.append('name', data.name);
     formData.append('capacity', data.capacity.toString());
@@ -191,13 +191,14 @@ class RoomService {
     if (data.status) {
       formData.append('status', data.status);
     }
-    if (data.description) {
-      formData.append('description', data.description);
-    }
+
+    // Always append description so that users can clear it, but make sure it's a string
+    formData.append('description', data.description ? String(data.description) : '');
+
     if (data.amenities && data.amenities.length > 0) {
       formData.append('amenities', JSON.stringify(data.amenities));
     }
-    
+
     // Add image files (if provided)
     if (data.imageFiles && data.imageFiles.length > 0) {
       data.imageFiles.forEach((file) => {
@@ -207,18 +208,18 @@ class RoomService {
     } else {
       console.log('No files to upload with create request');
     }
-    
+
     const token = localStorage.getItem('auth_token');
     if (!token) {
       throw new Error('No authentication token found');
     }
-  
+
     console.log('FormData entries:', {
       name: formData.get('name'),
       buildingId: formData.get('buildingId'),
       hasFiles: formData.has('files'),
     });
-  
+
     const response = await fetch(`${this.baseURL}/`, {
       method: 'POST',
       headers: {
@@ -227,14 +228,14 @@ class RoomService {
       },
       body: formData,
     });
-  
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
       console.error('Create room error:', errorMessage, errorData);
       throw new Error(errorMessage);
     }
-  
+
     const result = await response.json();
     console.log('Create room success:', result);
     const roomData = this.extractRoomData(result);
@@ -244,13 +245,12 @@ class RoomService {
   /**
    * Update an existing room
    */
-  async update(id: string, data: RoomFormData & { imageFiles?: File[] }): Promise<Room> {
+  async update(id: string, data: RoomFormData & { imageFiles?: File[]; deletedImageIds?: string[] }): Promise<Room> {
     const formData = new FormData();
-    
+
     // Add text fields
     formData.append('name', data.name);
     formData.append('capacity', data.capacity.toString());
-    formData.append('description', data.description || '');
     formData.append('price', data.price.toString());
     formData.append('buildingId', data.buildingId);
     formData.append('squareMeter', (data.squareMeter || 0).toString());
@@ -258,16 +258,18 @@ class RoomService {
     formData.append('bathroomCount', (data.bathroomCount || 1).toString());
     formData.append('floor', (data.floor || 1).toString());
     formData.append('countCapacity', (data.countCapacity || 0).toString());
+
     if (data.status) {
       formData.append('status', data.status);
     }
-    if (data.description) {
-      formData.append('description', data.description);
-    }
+
+    // Always append description so that users can clear it, but make sure it's a string
+    formData.append('description', data.description ? String(data.description) : '');
+
     if (data.amenities && data.amenities.length > 0) {
       formData.append('amenities', JSON.stringify(data.amenities));
     }
-    
+
     // Add image files (if provided)
     if (data.imageFiles && data.imageFiles.length > 0) {
       data.imageFiles.forEach((file) => {
@@ -277,18 +279,26 @@ class RoomService {
     } else {
       console.log('No files to upload with update request');
     }
-    
+
+    // Add deleted image IDs (tells backend which images to remove)
+    if (data.deletedImageIds && data.deletedImageIds.length > 0) {
+      data.deletedImageIds.forEach((imageId) => {
+        formData.append('imageUrls', imageId);
+      });
+      console.log(`Sending ${data.deletedImageIds.length} image ID(s) to delete`);
+    }
+
     const token = localStorage.getItem('auth_token');
     if (!token) {
       throw new Error('No authentication token found');
     }
-  
+
     console.log('FormData entries for update:', {
       name: formData.get('name'),
       buildingId: formData.get('buildingId'),
       hasFiles: formData.has('files'),
     });
-  
+
     const response = await fetch(`${this.baseURL}/${id}`, {
       method: 'PATCH',
       headers: {
@@ -297,14 +307,14 @@ class RoomService {
       },
       body: formData,
     });
-  
+
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
       const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
       console.error('Update room error:', errorMessage, errorData);
       throw new Error(errorMessage);
     }
-  
+
     const result = await response.json();
     console.log('Update room success:', result);
     const roomData = this.extractRoomData(result);
@@ -323,7 +333,7 @@ class RoomService {
     try {
       const url = `${this.baseURL}/${id}`;
       console.log('Deleting room at URL:', url);
-      
+
       const response = await fetch(url, {
         method: 'DELETE',
         headers: {
@@ -369,21 +379,20 @@ class RoomService {
   private transformRoom(room: any): Room {
     // Handle images - could be string, array of strings, or array of objects with imageUrl
     let images: string[] = [];
+    let imageObjects: Array<{ id: string; imageUrl: string }> = [];
     if (room.images) {
       if (typeof room.images === 'string') {
-        // Single image string
         images = [room.images];
       } else if (Array.isArray(room.images)) {
-        // Check if it's array of objects with imageUrl field
         if (room.images.length > 0 && typeof room.images[0] === 'object' && room.images[0].imageUrl) {
           images = room.images.map((img: any) => img.imageUrl);
+          imageObjects = room.images.map((img: any) => ({ id: img.id, imageUrl: img.imageUrl }));
         } else if (typeof room.images[0] === 'string') {
-          // Array of strings
           images = room.images;
         }
       }
     }
-    
+
     // Handle amenities - could be string (JSON), array, or array of objects with name field
     let amenities: string[] = [];
     if (room.amenities) {
@@ -403,7 +412,7 @@ class RoomService {
         }
       }
     }
-    
+
     // Map status - keep uppercase format from Prisma enum
     let roomStatus: 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' | 'DISABLED' = 'AVAILABLE';
     if (room.status) {
@@ -412,7 +421,7 @@ class RoomService {
         roomStatus = statusUpper as 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' | 'DISABLED';
       }
     }
-    
+
     return {
       id: room.id,
       name: room.name || '',
@@ -427,6 +436,7 @@ class RoomService {
       buildingId: room.buildingId || room.building_id || '',
       buildingName: room.buildingName || room.building?.name || '',
       images: images,
+      imageObjects: imageObjects,
       amenities: amenities,
       description: room.description || undefined,
       createdAt: room.createdAt || room.created_at,

@@ -58,7 +58,7 @@ const RoomsPage = () => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  const handleFormSubmit = async (formData: RoomFormData & { imageFiles?: File[] }) => {
+  const handleFormSubmit = async (formData: RoomFormData & { imageFiles?: File[]; deletedImageIds?: string[] }) => {
     try {
       if (editingRoom) {
         await updateRoomMutation.mutateAsync({ id: editingRoom.id, data: formData });
@@ -85,7 +85,7 @@ const RoomsPage = () => {
         description: "Không thể lưu thông tin phòng.",
         variant: "destructive",
         duration: 3000,
-      }); 
+      });
       throw error;
     }
   };
@@ -105,9 +105,9 @@ const RoomsPage = () => {
 
     try {
       await deleteRoomMutation.mutateAsync(roomToDelete);
-      
+
       await refetch();
-      
+
       toast({
         title: "Thành công",
         description: "Đã xóa phòng.",

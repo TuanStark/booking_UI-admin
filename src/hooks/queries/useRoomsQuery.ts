@@ -60,7 +60,7 @@ export const useUpdateRoom = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: RoomFormData & { imageFiles?: File[] } }) =>
+        mutationFn: ({ id, data }: { id: string; data: RoomFormData & { imageFiles?: File[]; deletedImageIds?: string[] } }) =>
             roomService.update(id, data),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.rooms.detail(variables.id) });

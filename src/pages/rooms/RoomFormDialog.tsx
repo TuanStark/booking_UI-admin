@@ -22,7 +22,7 @@ interface RoomFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   room?: Room | null;
-  onSubmit: (data: RoomFormData & { imageFiles?: File[] }) => Promise<void>;
+  onSubmit: (data: RoomFormData & { imageFiles?: File[]; deletedImageIds?: string[] }) => Promise<void>;
   triggerButton?: React.ReactNode;
 }
 
@@ -50,6 +50,8 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
   });
   // Store File objects separately for FormData submission
   const [imageFiles, setImageFiles] = useState<(File | string | null)[]>([]);
+  // Track IDs of existing images that user has removed (for backend deletion)
+  const [deletedImageIds, setDeletedImageIds] = useState<string[]>([]);
 
   const { errors, validate, clearErrors, clearFieldError } = useFormValidation(roomSchema);
   // Load buildings for dropdown
@@ -77,6 +79,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
         buildingId: room.buildingId,
         description: room.description || '',
         amenities: room.amenities || [],
+        images: roomImages,
       });
       // For existing rooms, images are URLs (strings)
       setImageFiles(roomImages);
@@ -97,6 +100,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
       });
       setImageFiles([]);
     }
+    setDeletedImageIds([]);
     clearErrors();
 
   }, [room]);
@@ -181,6 +185,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
         description: formData.description || '',
         amenities: formData.amenities || [],
         imageFiles: filesToUpload,
+        deletedImageIds: deletedImageIds.length > 0 ? deletedImageIds : undefined,
       };
 
       console.log('Submitting data:', {
@@ -238,6 +243,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
         amenities: []
       });
       setImageFiles([]);
+      setDeletedImageIds([]);
       clearErrors();
     }
   };
@@ -380,6 +386,16 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
 
   const handleRemoveImageSlot = (index: number) => {
     const currentImages = formData.images || [];
+    const removedImageUrl = currentImages[index];
+
+    // If removing an existing server image, track its DB ID for backend deletion
+    if (room && removedImageUrl && typeof removedImageUrl === 'string' && !removedImageUrl.startsWith('data:')) {
+      const imageObj = room.imageObjects?.find(img => img.imageUrl === removedImageUrl);
+      if (imageObj) {
+        setDeletedImageIds(prev => [...prev, imageObj.id]);
+      }
+    }
+
     const newImages = currentImages.filter((_, i) => i !== index);
     const currentFiles = [...imageFiles];
     const newFiles = currentFiles.filter((_, i) => i !== index);
