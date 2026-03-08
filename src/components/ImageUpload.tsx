@@ -18,7 +18,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
   className = '',
   label = 'Tải ảnh lên',
   // folder = 'movieTix',
-  maxSize = 3000000,
+  maxSize = 52428800, // 50MB default
   accept = 'image/*',
   disabled = false
 }) => {
@@ -52,7 +52,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
 
     // Validate file size
     if (file.size > maxSize) {
-      setError(`Kích thước file không được vượt quá ${(maxSize/1000000).toFixed(1)}MB`);
+      setError(`Kích thước file không được vượt quá ${(maxSize / 1000000).toFixed(1)}MB`);
       return;
     }
 
@@ -98,7 +98,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
     if (disabled) return;
     e.preventDefault();
     setIsDragging(false);
-    
+
     const file = e.dataTransfer.files?.[0];
     if (file) {
       processFile(file);
@@ -135,12 +135,12 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         {label}
         {!disabled && <span className="text-red-500 ml-1">*</span>}
       </div>
-      
+
       {previewUrl ? (
         <div className={`relative rounded-lg overflow-hidden group ${disabled ? 'opacity-60' : ''}`}>
-          <img 
-            src={previewUrl} 
-            alt="Preview" 
+          <img
+            src={previewUrl}
+            alt="Preview"
             className="w-full h-48 object-cover"
           />
           {!disabled && (
@@ -176,17 +176,16 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
         </div>
       ) : (
         <div
-          className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center h-48 transition-colors ${
-            disabled 
-              ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 cursor-not-allowed opacity-60'
-              : isDragging 
-                ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 cursor-pointer' 
-                : isUploading
-                  ? 'border-blue-400 bg-blue-50/30 dark:bg-blue-900/10 cursor-wait'
-                  : error
-                    ? 'border-error-400 bg-error-50/30 dark:bg-error-900/10 cursor-pointer'
-                    : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
-          }`}
+          className={`border-2 border-dashed rounded-lg p-6 flex flex-col items-center justify-center h-48 transition-colors ${disabled
+            ? 'border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800 cursor-not-allowed opacity-60'
+            : isDragging
+              ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/20 cursor-pointer'
+              : isUploading
+                ? 'border-blue-400 bg-blue-50/30 dark:bg-blue-900/10 cursor-wait'
+                : error
+                  ? 'border-error-400 bg-error-50/30 dark:bg-error-900/10 cursor-pointer'
+                  : 'border-gray-300 dark:border-gray-600 hover:border-primary-400 hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer'
+            }`}
           onDragOver={handleDragOver}
           onDragLeave={handleDragLeave}
           onDrop={handleDrop}
@@ -201,19 +200,17 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
             </>
           ) : (
             <>
-              <ImageIcon 
-                size={36} 
-                className={`${
-                  disabled 
-                    ? 'text-gray-300 dark:text-gray-600'
-                    : error 
-                      ? 'text-error-400' 
-                      : 'text-gray-400 dark:text-gray-500'
-                } mb-2`} 
+              <ImageIcon
+                size={36}
+                className={`${disabled
+                  ? 'text-gray-300 dark:text-gray-600'
+                  : error
+                    ? 'text-error-400'
+                    : 'text-gray-400 dark:text-gray-500'
+                  } mb-2`}
               />
-              <p className={`text-sm text-center mb-1 ${
-                disabled ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'
-              }`}>
+              <p className={`text-sm text-center mb-1 ${disabled ? 'text-gray-400 dark:text-gray-500' : 'text-gray-600 dark:text-gray-400'
+                }`}>
                 {disabled ? 'Upload bị vô hiệu hóa' : (
                   <>
                     Kéo thả ảnh vào đây hoặc{' '}
@@ -237,7 +234,7 @@ const ImageUpload: React.FC<ImageUploadProps> = ({
           )}
         </div>
       )}
-      
+
       <input
         type="file"
         name="file"

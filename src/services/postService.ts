@@ -38,11 +38,6 @@ class PostService {
         try {
             const response = await fetch(url, config);
 
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-            }
-
             if (response.status === 204) {
                 return {
                     statusCode: 204,
@@ -52,11 +47,18 @@ class PostService {
             }
 
             const text = await response.text();
-            return text ? JSON.parse(text) : {
+            const payload = text ? JSON.parse(text) : {
                 statusCode: response.status,
                 message: 'Success',
                 data: null
             } as any;
+
+            // Many endpoints in the backend return 200 OK but with a failure statusCode in the payload
+            if (!response.ok || (payload.statusCode && payload.statusCode >= 400)) {
+                throw new Error(payload.message || `HTTP error! status: ${payload.statusCode || response.status}`);
+            }
+
+            return payload;
         } catch (error) {
             if (error instanceof Error) {
                 throw error;
