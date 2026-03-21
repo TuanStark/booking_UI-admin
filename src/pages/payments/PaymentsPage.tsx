@@ -9,6 +9,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { Card, CardContent } from '@/components/ui/card';
 
 import Pagination from '@/components/ui/pagination';
+import { toMoneyNumber } from '@/utils/formatCurrency';
 
 const PaymentsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -51,7 +52,9 @@ const PaymentsPage: React.FC = () => {
       'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
     if (revenueData && revenueData.length > 0) {
-      const revenueMap = new Map(revenueData.map(item => [item.month, item.amount]));
+      const revenueMap = new Map(
+        revenueData.map(item => [item.month, toMoneyNumber(item.amount)]),
+      );
       return months.map(month => ({
         month,
         amount: revenueMap.get(month) || 0,

@@ -1,4 +1,5 @@
 import { Payment } from '@/types';
+import { toMoneyNumber } from '@/utils/formatCurrency';
 import { PaginationMeta, PaginatedResponse } from '@/types/globalClass';
 
 export interface GetPaymentsParams {
@@ -338,7 +339,7 @@ class PaymentService {
       bookingId: bookingId,
       userId: userId,
       userName: userName,
-      amount: payment.amount || payment.totalAmount || 0,
+      amount: toMoneyNumber(payment.amount ?? payment.totalAmount),
       method: method,
       status: status,
       transactionId: payment.transactionId || payment.transaction_id || payment.id,

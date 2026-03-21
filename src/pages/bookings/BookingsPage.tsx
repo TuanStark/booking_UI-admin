@@ -9,6 +9,7 @@ import Pagination from '@/components/ui/pagination';
 import { useBookings, useApproveBooking, useRejectBooking } from '@/hooks/queries';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/use-toast';
+import { formatNumberVi, formatVND, toMoneyNumber } from '@/utils/formatCurrency';
 
 const BookingsPage = () => {
   const { toast } = useToast();
@@ -90,7 +91,9 @@ const BookingsPage = () => {
     totalBookings: bookings.length,
     pendingBookings: bookings.filter(b => b.bookingStatus === 'pending').length,
     confirmedBookings: bookings.filter(b => b.bookingStatus === 'confirmed').length,
-    totalRevenue: bookings.filter(b => b.paymentStatus === 'paid').reduce((sum, b) => sum + b.totalAmount, 0),
+    totalRevenue: bookings
+      .filter(b => b.paymentStatus === 'paid')
+      .reduce((sum, b) => sum + toMoneyNumber(b.totalAmount), 0),
   }), [bookings]);
 
   if (isLoading && bookings.length === 0) {
@@ -121,20 +124,24 @@ const BookingsPage = () => {
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Chờ duyệt</p>
-            <p className="text-2xl font-bold text-orange-600">{stats.pendingBookings}</p>
+            <p className="text-2xl font-bold text-orange-600">
+              {formatNumberVi(stats.pendingBookings)}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Đã xác nhận</p>
-            <p className="text-2xl font-bold text-green-600">{stats.confirmedBookings}</p>
+            <p className="text-2xl font-bold text-green-600">
+              {formatNumberVi(stats.confirmedBookings)}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Doanh thu</p>
             <p className="text-2xl font-bold text-blue-600">
-              ${stats.totalRevenue.toLocaleString()}
+              {formatVND(stats.totalRevenue)}
             </p>
           </CardContent>
         </Card>

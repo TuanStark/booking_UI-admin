@@ -461,7 +461,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                   className={`h-10 rounded-md border border-input bg-background px-3 py-2 ${errors.status ? 'border-red-500 focus:border-red-500' : ''}`}
                 >
                   <option value="AVAILABLE">Có sẵn</option>
-                  <option value="BOOKED">Đã đặt</option>
+                  <option value="BOOKED">Hết phòng</option>
                   <option value="MAINTENANCE">Bảo trì</option>
                   <option value="DISABLED">Vô hiệu hóa</option>
                 </select>
@@ -477,7 +477,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
             <h3 className="text-lg font-semibold text-gray-900 dark:text-white border-b pb-2">Giá và sức chứa</h3>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="price">Giá (USD/tháng) *</Label>
+                <Label htmlFor="price">Giá (VNĐ/tháng) *</Label>
                 <Input
                   id="price"
                   name="price"

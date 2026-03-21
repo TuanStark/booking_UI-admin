@@ -27,6 +27,7 @@ import {
 } from 'recharts';
 
 import { Skeleton } from '@/components/ui/skeleton';
+import { formatNumberVi, formatVND } from '@/utils/formatCurrency';
 
 // Loading skeleton component
 const DashboardSkeleton: React.FC = () => (
@@ -151,7 +152,7 @@ const DashboardPage: React.FC = () => {
     },
     {
       title: 'Tổng số phòng',
-      value: totalRooms.toLocaleString(),
+      value: formatNumberVi(totalRooms),
       icon: Home,
       color: 'bg-green-100 text-green-600',
       change: '—',
@@ -167,7 +168,7 @@ const DashboardPage: React.FC = () => {
     },
     {
       title: 'Tổng số đặt phòng',
-      value: totalBookings.toLocaleString(),
+      value: formatNumberVi(totalBookings),
       icon: Calendar,
       color: 'bg-purple-100 text-purple-600',
       change: formatGrowth(bookingGrowth),
@@ -175,7 +176,7 @@ const DashboardPage: React.FC = () => {
     },
     {
       title: 'Doanh thu',
-      value: `${totalRevenue.toLocaleString()}₫`,
+      value: formatVND(totalRevenue),
       icon: DollarSign,
       color: 'bg-emerald-100 text-emerald-600',
       change: formatGrowth(revenueGrowth),
@@ -183,10 +184,10 @@ const DashboardPage: React.FC = () => {
     },
     {
       title: 'Thanh toán thành công',
-      value: (payments?.successPayments ?? 0).toLocaleString(),
+      value: formatNumberVi(payments?.successPayments ?? 0),
       icon: TrendingUp,
       color: 'bg-pink-100 text-pink-600',
-      change: `${payments?.pendingPayments ?? 0} đang chờ`,
+      change: `${formatNumberVi(payments?.pendingPayments ?? 0)} đang chờ`,
       trend: 'neutral',
     },
   ];
@@ -314,9 +315,7 @@ const DashboardPage: React.FC = () => {
                   <XAxis dataKey="month" />
                   <YAxis />
                   <Tooltip
-                    formatter={(value: number) =>
-                      `${value.toLocaleString()}₫`
-                    }
+                    formatter={(value: number) => formatVND(value)}
                   />
                   <Bar dataKey="amount" fill="#10b981" radius={[8, 8, 0, 0]} />
                 </BarChart>

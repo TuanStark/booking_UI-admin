@@ -76,7 +76,10 @@ export const roomSchema = z.object({
   price: z
     .number()
     .min(0, 'Giá phòng không được âm')
-    .max(100000, 'Giá phòng không được vượt quá $100,000'),
+    .max(
+      500_000_000,
+      'Giá phòng không được vượt quá 500.000.000 ₫',
+    ),
   squareMeter: z
     .number()
     .min(0, 'Diện tích không được âm')

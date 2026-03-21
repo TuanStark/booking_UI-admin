@@ -2,6 +2,7 @@ import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { DollarSign, Clock, CheckCircle } from 'lucide-react';
 import { Payment } from '@/types';
+import { formatVND, toMoneyNumber } from '@/utils/formatCurrency';
 
 interface PaymentStatsCardsProps {
   payments: Payment[];
@@ -10,7 +11,7 @@ interface PaymentStatsCardsProps {
 const PaymentStatsCards: React.FC<PaymentStatsCardsProps> = ({ payments }) => {
   const totalRevenue = payments
     .filter(p => p.status === 'completed')
-    .reduce((sum, p) => sum + p.amount, 0);
+    .reduce((sum, p) => sum + toMoneyNumber(p.amount), 0);
 
   const pendingPayments = payments.filter(p => p.status === 'pending').length;
 
@@ -25,7 +26,9 @@ const PaymentStatsCards: React.FC<PaymentStatsCardsProps> = ({ payments }) => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Tổng doanh thu</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white">${totalRevenue.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white">
+              {formatVND(totalRevenue)}
+            </p>
             </div>
             <DollarSign className="h-8 w-8 text-green-600" />
           </div>

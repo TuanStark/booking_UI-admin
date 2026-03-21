@@ -4,6 +4,7 @@ import { Card, CardContent, CardTitle } from '@/components/ui/card';
 import { Edit, Trash2, Bed, DollarSign, Users as UsersIcon } from 'lucide-react';
 import { Room } from '@/types';
 import { useNavigate } from 'react-router-dom';
+import { formatVND } from '@/utils/formatCurrency';
 
 interface RoomCardProps {
   room: Room;
@@ -47,7 +48,7 @@ const RoomCard: React.FC<RoomCardProps> = ({
       case 'AVAILABLE':
         return 'Còn trống';
       case 'BOOKED':
-        return 'Đã đặt';
+        return 'Hết phòng';
       case 'MAINTENANCE':
         return 'Bảo trì';
       case 'DISABLED':
@@ -137,7 +138,9 @@ const RoomCard: React.FC<RoomCardProps> = ({
             <div className="flex items-center space-x-2 text-sm">
               <DollarSign className="h-4 w-4 text-green-600 dark:text-green-400" />
               <span className="text-gray-600 dark:text-gray-400">Giá:</span>
-              <span className="font-semibold text-gray-900 dark:text-white">${room.price.toLocaleString()}/tháng</span>
+              <span className="font-semibold text-gray-900 dark:text-white">
+                {formatVND(room.price)}/tháng
+              </span>
             </div>
             
             <div className="flex items-center space-x-2 text-sm">

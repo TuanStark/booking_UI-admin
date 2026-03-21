@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { CheckCircle, XCircle } from 'lucide-react';
 import { Booking } from '@/types';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
+import { formatVND } from '@/utils/formatCurrency';
 
 interface BookingTableRowProps {
   booking: Booking;
@@ -116,7 +117,7 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
           {formatDate(booking.checkOutDate)}
         </td>
         <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
-          ${booking.totalAmount.toLocaleString()}
+          {formatVND(booking.totalAmount)}
         </td>
         <td className="py-3 px-4">
           {getPaymentStatusBadge(booking.paymentStatus)}

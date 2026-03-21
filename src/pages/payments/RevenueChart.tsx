@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ResponsiveContainer, LineChart, Line, CartesianGrid, XAxis, YAxis, Tooltip } from 'recharts';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { formatVND } from '@/utils/formatCurrency';
 
 interface RevenueChartProps {
   monthlyRevenueData: { month: string; amount: number }[];
@@ -70,7 +71,7 @@ const RevenueChart: React.FC<RevenueChartProps> = ({
               <XAxis dataKey="month" />
               <YAxis domain={[0, 'auto']} />
               <Tooltip 
-                formatter={(value: number) => `$${value.toLocaleString()}`}
+                formatter={(value: number) => formatVND(value)}
                 labelFormatter={(label) => `Tháng: ${label}`}
               />
               <Line 

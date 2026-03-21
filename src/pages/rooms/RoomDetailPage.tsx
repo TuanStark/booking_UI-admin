@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { ArrowLeft, Home, Users, DollarSign, Calendar, Wifi, Tv, Wind } from 'lucide-react';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useRoom } from '@/hooks/queries/useRoomsQuery';
+import { formatVND } from '@/utils/formatCurrency';
 
 const RoomDetailPage: React.FC = () => {
   const { id } = useParams();
@@ -65,7 +66,7 @@ const RoomDetailPage: React.FC = () => {
                 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300'
           }`}>
           {room.status === 'AVAILABLE' ? 'Còn trống' :
-            room.status === 'BOOKED' ? 'Đã đặt' :
+            room.status === 'BOOKED' ? 'Hết phòng' :
               room.status === 'MAINTENANCE' ? 'Bảo trì' : 'Vô hiệu hóa'}
         </span>
       </div>
@@ -149,7 +150,9 @@ const RoomDetailPage: React.FC = () => {
                 <DollarSign className="h-5 w-5 text-green-600 dark:text-green-400" />
                 <div className="flex-1">
                   <p className="text-sm text-gray-600 dark:text-gray-400">Giá thuê</p>
-                  <p className="font-semibold text-gray-900 dark:text-white">${room.price.toLocaleString()}/tháng</p>
+                  <p className="font-semibold text-gray-900 dark:text-white">
+                  {formatVND(room.price)}/tháng
+                </p>
                 </div>
               </div>
 
