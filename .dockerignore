@@ -1,0 +1,22 @@
+# Dependencies & output
+node_modules
+dist
+coverage
+
+# Git & CI
+.git
+.github
+
+# Secrets & local env (never bake into image context)
+.env
+.env.*
+!env.example
+
+# Logs & editor
+npm-debug.log*
+*.log
+.DS_Store
+
+# Alt Dockerfiles / docs (smaller build context)
+Dockerfile.TOP*
+*.md
