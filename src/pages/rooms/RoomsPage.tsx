@@ -20,8 +20,6 @@ const RoomsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [buildingFilter, setBuildingFilter] = useState<string>('all');
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
@@ -46,12 +44,6 @@ const RoomsPage = () => {
     limitNumber: itemsPerPage,
     totalPages: 1,
   };
-
-  const filteredRooms = rooms.filter(room => {
-    const matchesStatus = statusFilter === 'all' || room.status === statusFilter;
-    const matchesBuilding = buildingFilter === 'all' || room.buildingId === buildingFilter;
-    return matchesStatus && matchesBuilding;
-  });
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page);
@@ -189,7 +181,7 @@ const RoomsPage = () => {
       ) : (
         <>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredRooms.map((room) => (
+            {rooms.map((room) => (
               <RoomCard
                 key={room.id}
                 room={room}
