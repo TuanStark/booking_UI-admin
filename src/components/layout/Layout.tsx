@@ -197,12 +197,12 @@ const TopBar: React.FC<{
 
         <div className="flex items-center space-x-4">
           <div className="hidden md:block relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            {/* <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input
               type="text"
               placeholder="Tìm kiếm..."
               className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-800 dark:border-gray-600 dark:text-white"
-            />
+            /> */}
           </div>
 
           <Button
@@ -214,7 +214,7 @@ const TopBar: React.FC<{
             {isDarkMode ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
           </Button>
 
-          <Button
+          {/* <Button
             variant="ghost"
             size="icon"
             className="relative hover:bg-gray-100 dark:hover:bg-gray-800"
@@ -223,7 +223,7 @@ const TopBar: React.FC<{
             <span className="absolute -top-1 -right-1 h-4 w-4 bg-red-500 text-white text-xs rounded-full flex items-center justify-center">
               3
             </span>
-          </Button>
+          </Button> */}
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
