@@ -22,8 +22,6 @@ import {
   Settings,
   LogOut,
   Menu,
-  Bell,
-  Search,
   Moon,
   Sun,
   FileText
