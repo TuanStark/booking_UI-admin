@@ -35,6 +35,7 @@ export interface Room {
   imageObjects: RoomImage[];
   amenities: string[];
   description?: string;
+  activeBookings?: any[];
   createdAt?: string;
   updatedAt?: string;
 }
@@ -61,9 +62,10 @@ export interface Booking {
   buildingName: string;
   checkInDate: string;
   checkOutDate: string;
+  durationMonths?: number;
   totalAmount: number;
   paymentStatus: 'pending' | 'paid' | 'failed' | 'refunded';
-  bookingStatus: 'pending' | 'confirmed' | 'cancelled' | 'completed';
+  bookingStatus: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'active' | 'expiring_soon' | 'queued';
   createdAt: string;
   notes?: string;
 }

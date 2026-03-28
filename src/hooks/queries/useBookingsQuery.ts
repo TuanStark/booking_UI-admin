@@ -8,7 +8,10 @@ import { Booking } from '@/types';
 /**
  * Hook để fetch danh sách bookings với filters và pagination
  */
-export const useBookings = (params?: GetBookingsParams) => {
+export const useBookings = (
+    params?: GetBookingsParams,
+    queryOptions?: { enabled?: boolean }
+) => {
     return useQuery({
         queryKey: queryKeys.bookings.list(params || {}),
         queryFn: async () => {
@@ -18,6 +21,7 @@ export const useBookings = (params?: GetBookingsParams) => {
                 meta: response.meta,
             };
         },
+        enabled: queryOptions?.enabled !== false,
     });
 };
 
@@ -35,6 +39,25 @@ export const useBooking = (id: string | undefined) => {
     });
 };
 
+/**
+ * Đặt phòng gắn với một phòng (dùng cho thời biểu / lịch ở trang chi tiết phòng).
+ * Nếu API lỗi, UI có thể fallback sang `activeBookings` từ chi tiết phòng.
+ */
+export const useBookingsByRoomId = (
+    roomId: string | undefined,
+    queryOptions?: { enabled?: boolean }
+) => {
+    return useQuery({
+        queryKey: queryKeys.bookings.byRoom(roomId || ''),
+        queryFn: async () => {
+            if (!roomId) throw new Error('Room ID is required');
+            return await bookingService.getByRoomId(roomId);
+        },
+        enabled: (queryOptions?.enabled !== false) && !!roomId,
+        staleTime: 60 * 1000,
+    });
+};
+
 // ============ MUTATIONS ============
 
 /**
@@ -49,6 +72,7 @@ export const useApproveBooking = () => {
             // Invalidate specific booking and all lists
             queryClient.invalidateQueries({ queryKey: queryKeys.bookings.detail(id) });
             queryClient.invalidateQueries({ queryKey: queryKeys.bookings.lists() });
+            queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });
         },
     });
 };
@@ -64,6 +88,7 @@ export const useRejectBooking = () => {
         onSuccess: (_, id) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.bookings.detail(id) });
             queryClient.invalidateQueries({ queryKey: queryKeys.bookings.lists() });
+            queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });
         },
     });
 };
@@ -78,6 +103,7 @@ export const useDeleteBooking = () => {
         mutationFn: (id: string) => bookingService.delete(id),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.bookings.lists() });
+            queryClient.invalidateQueries({ queryKey: queryKeys.bookings.all });
         },
     });
 };

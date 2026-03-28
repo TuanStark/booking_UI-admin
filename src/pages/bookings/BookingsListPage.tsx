@@ -11,14 +11,13 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useToast } from '@/components/ui/use-toast';
 import { formatNumberVi, formatVND, toMoneyNumber } from '@/utils/formatCurrency';
 
-const BookingsPage = () => {
+const BookingsListPage = () => {
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState<'all' | 'pending' | 'confirmed' | 'cancelled' | 'completed'>('all');
+  const [selectedStatus, setSelectedStatus] = useState<'all' | 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'active' | 'expiring_soon' | 'queued'>('all');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<'all' | 'pending' | 'paid' | 'failed' | 'refunded'>('all');
   const [currentPage, setCurrentPage] = useState(1);
 
-  // TanStack Query hooks
   const { data, isLoading, error, refetch } = useBookings({
     page: currentPage,
     limit: 10,
@@ -52,16 +51,16 @@ const BookingsPage = () => {
     approveBookingMutation.mutate(bookingId, {
       onSuccess: () => {
         toast({
-          title: "Thành công",
-          description: "Đã duyệt đặt phòng.",
+          title: 'Thành công',
+          description: 'Đã duyệt đặt phòng.',
         });
       },
       onError: (err) => {
         const errorMessage = err instanceof Error ? err.message : 'Không thể duyệt đặt phòng';
         toast({
-          title: "Lỗi",
+          title: 'Lỗi',
           description: errorMessage,
-          variant: "destructive",
+          variant: 'destructive',
         });
       },
     });
@@ -71,30 +70,34 @@ const BookingsPage = () => {
     rejectBookingMutation.mutate(bookingId, {
       onSuccess: () => {
         toast({
-          title: "Thành công",
-          description: "Đã từ chối đặt phòng.",
+          title: 'Thành công',
+          description: 'Đã từ chối đặt phòng.',
         });
       },
       onError: (err) => {
         const errorMessage = err instanceof Error ? err.message : 'Không thể từ chối đặt phòng';
         toast({
-          title: "Lỗi",
+          title: 'Lỗi',
           description: errorMessage,
-          variant: "destructive",
+          variant: 'destructive',
         });
       },
     });
   };
 
-  // Calculate stats using useMemo for performance
-  const stats = useMemo(() => ({
-    totalBookings: bookings.length,
-    pendingBookings: bookings.filter(b => b.bookingStatus === 'pending').length,
-    confirmedBookings: bookings.filter(b => b.bookingStatus === 'confirmed').length,
-    totalRevenue: bookings
-      .filter(b => b.paymentStatus === 'paid')
-      .reduce((sum, b) => sum + toMoneyNumber(b.totalAmount), 0),
-  }), [bookings]);
+  const stats = useMemo(
+    () => ({
+      totalBookings: bookings.length,
+      pendingBookings: bookings.filter((b) => b.bookingStatus === 'pending' || b.bookingStatus === 'queued').length,
+      confirmedBookings: bookings.filter(
+        (b) => b.bookingStatus === 'confirmed' || b.bookingStatus === 'active' || b.bookingStatus === 'expiring_soon'
+      ).length,
+      totalRevenue: bookings
+        .filter((b) => b.paymentStatus === 'paid')
+        .reduce((sum, b) => sum + toMoneyNumber(b.totalAmount), 0),
+    }),
+    [bookings]
+  );
 
   if (isLoading && bookings.length === 0) {
     return (
@@ -106,14 +109,6 @@ const BookingsPage = () => {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Quản lý đặt phòng</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
-          Quản lý và theo dõi tất cả lượt đặt phòng
-        </p>
-      </div>
-
-      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="pt-6">
@@ -124,30 +119,23 @@ const BookingsPage = () => {
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Chờ duyệt</p>
-            <p className="text-2xl font-bold text-orange-600">
-              {formatNumberVi(stats.pendingBookings)}
-            </p>
+            <p className="text-2xl font-bold text-orange-600">{formatNumberVi(stats.pendingBookings)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
-            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Đã xác nhận</p>
-            <p className="text-2xl font-bold text-green-600">
-              {formatNumberVi(stats.confirmedBookings)}
-            </p>
+            <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Đã chốt / Đang thuê</p>
+            <p className="text-2xl font-bold text-green-600">{formatNumberVi(stats.confirmedBookings)}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="pt-6">
             <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Doanh thu</p>
-            <p className="text-2xl font-bold text-blue-600">
-              {formatVND(stats.totalRevenue)}
-            </p>
+            <p className="text-2xl font-bold text-blue-600">{formatVND(stats.totalRevenue)}</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Filters */}
       <Card>
         <CardHeader>
           <CardTitle>Bộ lọc</CardTitle>
@@ -175,6 +163,9 @@ const BookingsPage = () => {
               <option value="all">Tất cả trạng thái</option>
               <option value="pending">Chờ duyệt</option>
               <option value="confirmed">Đã xác nhận</option>
+              <option value="active">Đang thuê</option>
+              <option value="expiring_soon">Sắp hết hạn</option>
+              <option value="queued">Đặt trước</option>
               <option value="cancelled">Đã hủy</option>
               <option value="completed">Hoàn tất</option>
             </select>
@@ -203,13 +194,10 @@ const BookingsPage = () => {
         <Card>
           <CardContent className="pt-6">
             <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-md p-4">
-              <p className="text-sm text-red-600 dark:text-red-400">{error instanceof Error ? error.message : 'Đã có lỗi xảy ra'}</p>
-              <Button
-                variant="outline"
-                size="sm"
-                className="mt-2"
-                onClick={() => refetch()}
-              >
+              <p className="text-sm text-red-600 dark:text-red-400">
+                {error instanceof Error ? error.message : 'Đã có lỗi xảy ra'}
+              </p>
+              <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
                 Thử lại
               </Button>
             </div>
@@ -217,7 +205,6 @@ const BookingsPage = () => {
         </Card>
       )}
 
-      {/* Bookings Table */}
       <Card>
         <CardHeader>
           <CardTitle>Đặt phòng ({bookings.length})</CardTitle>
@@ -272,4 +259,4 @@ const BookingsPage = () => {
   );
 };
 
-export default BookingsPage;
+export default BookingsListPage;

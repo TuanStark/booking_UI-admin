@@ -42,6 +42,7 @@ export const queryKeys = {
         list: (filters: object) => [...queryKeys.bookings.lists(), filters] as const,
         details: () => [...queryKeys.bookings.all, 'detail'] as const,
         detail: (id: string) => [...queryKeys.bookings.details(), id] as const,
+        byRoom: (roomId: string) => [...queryKeys.bookings.all, 'byRoom', roomId] as const,
     },
 
     // Buildings

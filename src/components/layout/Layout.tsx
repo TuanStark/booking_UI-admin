@@ -115,7 +115,10 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
 
       <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
         {navigationItems.map((item) => {
-          const isActive = location.pathname === item.href;
+          const isActive =
+            item.href === '/bookings'
+              ? location.pathname.startsWith('/bookings')
+              : location.pathname === item.href;
           return (
             <Link
               key={item.name}

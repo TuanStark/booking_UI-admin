@@ -22,6 +22,7 @@ export {
 export {
     useBookings,
     useBooking,
+    useBookingsByRoomId,
     useApproveBooking,
     useRejectBooking,
     useDeleteBooking

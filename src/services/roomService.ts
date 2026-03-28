@@ -164,11 +164,30 @@ class RoomService {
   }
 
   /**
-   * Get a single room by ID
+   * Get a single room by ID (via API Gateway composite)
    */
   async getById(id: string): Promise<Room> {
-    const response = await this.authenticatedRequest<any>(`/${id}`);
-    const roomData = this.extractRoomData(response);
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const url = `${API_BASE_URL}/rooms/${id}/details`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+    }
+
+    const result = await response.json();
+    const roomData = this.extractRoomData(result);
     return this.transformRoom(roomData);
   }
 
@@ -374,6 +393,20 @@ class RoomService {
   }
 
   /**
+   * Align active booking payloads with RoomDetailPage (checkIn/checkOut vs start/end from API).
+   */
+  private normalizeActiveBookings(raw: unknown): any[] {
+    if (!Array.isArray(raw)) return [];
+    return raw.map((b: any) => {
+      const checkInDate =
+        b?.checkInDate ?? b?.checkinDate ?? b?.startDate ?? b?.start_date ?? '';
+      const checkOutDate =
+        b?.checkOutDate ?? b?.checkoutDate ?? b?.endDate ?? b?.end_date ?? '';
+      return { ...b, checkInDate, checkOutDate };
+    });
+  }
+
+  /**
    * Transform room data from API to Room type
    */
   private transformRoom(room: any): Room {
@@ -439,6 +472,7 @@ class RoomService {
       imageObjects: imageObjects,
       amenities: amenities,
       description: room.description || undefined,
+      activeBookings: this.normalizeActiveBookings(room.activeBookings),
       createdAt: room.createdAt || room.created_at,
       updatedAt: room.updatedAt || room.updated_at,
     };

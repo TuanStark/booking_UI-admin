@@ -61,10 +61,13 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
 
   const getBookingStatusBadge = (status: string) => {
     const colors = {
-      confirmed: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      pending: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-      completed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-      cancelled: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
+      confirmed: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+      pending: 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400',
+      completed: 'bg-slate-100 text-slate-700 dark:bg-slate-900/30 dark:text-slate-400',
+      cancelled: 'bg-rose-100 text-rose-700 dark:bg-rose-900/30 dark:text-rose-400',
+      active: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
+      expiring_soon: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
+      queued: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400',
     };
     
     const labels = {
@@ -72,6 +75,9 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
       pending: 'Chờ duyệt',
       completed: 'Hoàn tất',
       cancelled: 'Đã hủy',
+      active: 'Đang thuê',
+      expiring_soon: 'Sắp hết hạn',
+      queued: 'Đặt trước',
     };
     
     return (
@@ -146,14 +152,15 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
               </Button>
             </div>
           )}
-          {booking.bookingStatus === 'confirmed' && (
-            <span className="text-sm text-gray-600 dark:text-gray-400">Đã xác nhận</span>
-          )}
-          {booking.bookingStatus === 'cancelled' && (
-            <span className="text-sm text-gray-600 dark:text-gray-400">Đã hủy</span>
-          )}
-          {booking.bookingStatus === 'completed' && (
-            <span className="text-sm text-gray-600 dark:text-gray-400">Hoàn tất</span>
+          {booking.bookingStatus !== 'pending' && (
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {booking.bookingStatus === 'confirmed' && 'Đã xác nhận'}
+              {booking.bookingStatus === 'cancelled' && 'Đã hủy'}
+              {booking.bookingStatus === 'completed' && 'Hoàn tất'}
+              {booking.bookingStatus === 'active' && 'Đang thuê'}
+              {booking.bookingStatus === 'expiring_soon' && 'Sắp hết hạn'}
+              {booking.bookingStatus === 'queued' && 'Đặt trước'}
+            </span>
           )}
         </td>
       </tr>

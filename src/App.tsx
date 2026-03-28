@@ -21,7 +21,9 @@ import Layout from './components/layout/Layout';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import UsersPage from './pages/users/UsersPage';
 import BuildingsPage from './pages/buildings/BuildingsPage';
-import BookingsPage from './pages/bookings/BookingsPage';
+import BookingsLayout from './pages/bookings/BookingsLayout';
+import BookingsListPage from './pages/bookings/BookingsListPage';
+import BookingsCalendarPage from './pages/bookings/BookingsCalendarPage';
 import PaymentsPage from './pages/payments/PaymentsPage';
 import ReviewsPage from './pages/reviews/ReviewsPage';
 import SettingsPage from './pages/settings/SettingsPage';
@@ -71,7 +73,10 @@ function App() {
               <Route path="/buildings" element={<BuildingsPage />} />
               <Route path="/rooms" element={<RoomsPage />} />
               <Route path="/rooms/:id" element={<RoomDetailPage />} />
-              <Route path="/bookings" element={<BookingsPage />} />
+              <Route path="/bookings" element={<BookingsLayout />}>
+                <Route index element={<BookingsListPage />} />
+                <Route path="calendar" element={<BookingsCalendarPage />} />
+              </Route>
               <Route path="/payments" element={<PaymentsPage />} />
               <Route path="/reviews" element={<ReviewsPage />} />
               <Route path="/posts" element={<PostsPage />} />

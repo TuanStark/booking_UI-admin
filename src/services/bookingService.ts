@@ -150,6 +150,40 @@ class BookingService {
   }
 
   /**
+   * Get bookings specifically for a room (e.g., active tenants)
+   */
+  async getByRoomId(roomId: string, status?: string[]): Promise<Booking[]> {
+    try {
+      const token = localStorage.getItem('auth_token');
+      let endpoint = `/room/${roomId}`;
+      
+      const params = new URLSearchParams();
+      if (token) {
+        params.append('accessToken', token);
+      }
+      if (status && status.length > 0) {
+        status.forEach(s => params.append('status', s));
+      }
+      
+      const queryString = params.toString();
+      if (queryString) {
+        endpoint += `?${queryString}`;
+      }
+
+      const response = await this.authenticatedRequest<any>(endpoint);
+      const data = this.extractBookingData(response);
+      
+      if (!Array.isArray(data)) return [];
+      
+      // Transform mappings
+      return data.map((b: any) => this.transformBooking(b));
+    } catch (error) {
+      console.error('Error fetching bookings by room:', error);
+      throw error;
+    }
+  }
+
+  /**
    * Get a single booking by ID
    */
   async getById(id: string): Promise<Booking> {
@@ -211,7 +245,7 @@ class BookingService {
    */
   private transformBooking(booking: any): Booking {
     // Map booking status - API might return uppercase
-    let bookingStatus: 'pending' | 'confirmed' | 'cancelled' | 'completed' = 'pending';
+    let bookingStatus: 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'active' | 'expiring_soon' | 'queued' = 'pending';
     if (booking.bookingStatus || booking.status) {
       const status = (booking.bookingStatus || booking.status).toLowerCase();
       if (status === 'confirmed') {
@@ -220,6 +254,12 @@ class BookingService {
         bookingStatus = 'cancelled';
       } else if (status === 'completed') {
         bookingStatus = 'completed';
+      } else if (status === 'active') {
+        bookingStatus = 'active';
+      } else if (status === 'expiring_soon') {
+        bookingStatus = 'expiring_soon';
+      } else if (status === 'queued') {
+        bookingStatus = 'queued';
       } else {
         bookingStatus = 'pending';
       }
@@ -277,8 +317,9 @@ class BookingService {
       }
       
       // Calculate total amount from all details
+      const durationMonths = booking.durationMonths || 1;
       totalAmount = booking.details.reduce((sum: number, detail: any) => {
-        return sum + (detail.price || 0);
+        return sum + ((detail.price || 0) * durationMonths);
       }, 0);
       
       // Extract notes from details
@@ -310,6 +351,7 @@ class BookingService {
       buildingName: buildingName,
       checkInDate: checkInDate,
       checkOutDate: checkOutDate,
+      durationMonths: booking.durationMonths,
       totalAmount: totalAmount,
       paymentStatus: paymentStatus,
       bookingStatus: bookingStatus,
