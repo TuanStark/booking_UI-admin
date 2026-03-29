@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useChatSocket } from '../../hooks/useChatSocket';
 import * as chatApi from '../../services/chatService';
+import { userService } from '../../services/userService';
 import type { Conversation, Message, ConversationStatus } from '../../types/chat.types';
 import { useAuth } from '../../contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -37,6 +38,10 @@ const ChatPage: React.FC = () => {
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
+  
+  // Real user names dictionary: { [userId]: userName }
+  const [userNames, setUserNames] = useState<Record<string, string>>({});
+  const fetchedUserIds = useRef<Set<string>>(new Set());
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
@@ -76,8 +81,32 @@ const ChatPage: React.FC = () => {
 
     socket.onNewConversation((conv) => {
       setConversations((prev) => [conv, ...prev]);
+      resolveUserNames([conv.userId]);
     });
   }, [socket]);
+
+  // ─── Fetch User Details Helper ────────────────────────────
+  const resolveUserNames = async (userIds: string[]) => {
+    const newIds = Array.from(new Set(userIds)).filter(
+      (id) => id && !userNames[id] && !fetchedUserIds.current.has(id)
+    );
+
+    if (newIds.length === 0) return;
+    newIds.forEach((id) => fetchedUserIds.current.add(id));
+
+    await Promise.all(
+      newIds.map(async (id) => {
+        try {
+          const u = await userService.getById(id);
+          const nameToUse = u.name || u.email || 'Khách hàng';
+          setUserNames((prev) => ({ ...prev, [id]: nameToUse }));
+        } catch (err) {
+          console.warn(`Could not fetch user ${id}`, err);
+          setUserNames((prev) => ({ ...prev, [id]: 'Khách hàng' }));
+        }
+      })
+    );
+  };
 
   // ─── Auto-join socket room upon connection/selection ──────
   useEffect(() => {
@@ -99,6 +128,7 @@ const ChatPage: React.FC = () => {
         limit: 50,
       });
       setConversations(result.data);
+      resolveUserNames(result.data.map((c) => c.userId));
     } catch (err) {
       console.error('Failed to load conversations:', err);
     }
@@ -119,6 +149,7 @@ const ChatPage: React.FC = () => {
     try {
       const conv = await chatApi.getConversation(id);
       setSelectedConv(conv);
+      resolveUserNames([conv.userId]);
 
       // (Auto-join is now handled by the useEffect above!)
 
@@ -287,7 +318,7 @@ const ChatPage: React.FC = () => {
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
                       <p className={cn('text-sm font-medium truncate', unread > 0 ? 'text-gray-900 dark:text-white' : 'text-gray-700 dark:text-gray-300')}>
-                        {conv.title || `User ${conv.userId.slice(0, 8)}...`}
+                        {userNames[conv.userId] || conv.title || `User ${conv.userId.slice(0, 8)}...`}
                       </p>
                       <p className="text-xs text-gray-500 truncate mt-0.5">
                         {conv.lastMessageText || 'Chưa có tin nhắn'}
@@ -336,7 +367,7 @@ const ChatPage: React.FC = () => {
                 </button>
                 <div>
                   <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {selectedConv.title || `User ${selectedConv.userId.slice(0, 8)}...`}
+                    {userNames[selectedConv.userId] || selectedConv.title || `User ${selectedConv.userId.slice(0, 8)}...`}
                   </p>
                   <p className="text-xs text-gray-500">
                     {selectedConv.contextType && `${selectedConv.contextType}: ${selectedConv.contextId?.slice(0, 8)}...`}
@@ -407,7 +438,7 @@ const ChatPage: React.FC = () => {
                         >
                           {!isAdmin && (
                             <p className="text-[10px] font-semibold text-blue-600 dark:text-blue-400 mb-0.5">
-                              Khách hàng
+                              {userNames[selectedConv.userId] || 'Khách hàng'}
                             </p>
                           )}
                           <p className="whitespace-pre-wrap">{msg.content}</p>
@@ -439,7 +470,9 @@ const ChatPage: React.FC = () => {
                         <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
                         <span className="h-2 w-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
                       </div>
-                      <span className="text-[10px] text-gray-400 ml-1">đang nhập...</span>
+                      <span className="text-[10px] text-gray-400 ml-1">
+                        {userNames[selectedConv.userId] || 'khách hàng'} đang nhập...
+                      </span>
                     </div>
                   </div>
                 </div>
