@@ -24,7 +24,9 @@ import {
   Menu,
   Moon,
   Sun,
-  FileText
+  FileText,
+  Building,
+  MessageCircle
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -55,7 +57,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
     {
       name: 'Tòa nhà',
       href: '/buildings',
-      icon: Home,
+      icon: Building,
     },
     {
       name: 'Phòng',
@@ -76,6 +78,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       name: 'Đánh giá',
       href: '/reviews',
       icon: MessageSquare,
+    },
+    {
+      name: 'Tin nhắn',
+      href: '/chat',
+      icon: MessageCircle,
     },
     {
       name: 'Cài đặt',

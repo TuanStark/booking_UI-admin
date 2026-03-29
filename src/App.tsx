@@ -33,6 +33,7 @@ import PostsPage from './pages/posts/PostsPage';
 import PostFormPage from './pages/posts/PostFormPage';
 import { Toaster } from '@/components/ui/toaster';
 import PostDetailPage from './pages/posts/PostDetailPage';
+import ChatPage from './pages/chat/ChatPage';
 
 function App() {
   return (
@@ -84,6 +85,8 @@ function App() {
               <Route path="/posts/:id/edit" element={<PostFormPage />} />
               <Route path="/posts/:id" element={<PostDetailPage />} />
               <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/chat" element={<ChatPage />} />
+              <Route path="/chat/:conversationId" element={<ChatPage />} />
 
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />
