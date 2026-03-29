@@ -21,12 +21,14 @@ export function useChatSocket() {
   const onConversationUpdatedRef = useRef<((conv: Conversation) => void) | null>(null);
 
   useEffect(() => {
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth_token');
     if (!token) return;
 
     const socket = io(`${CHAT_WS_URL}/chat`, {
       auth: { token },
-      transports: ['websocket', 'polling'],
+      // Polling trước: request HTTP đầu tiên đi qua Express → http-proxy-middleware đăng ký upgrade.
+      // Nếu websocket trước, upgrade không qua middleware → proxy / cloudflared hay lỗi kết nối.
+      transports: ['polling', 'websocket'],
       reconnection: true,
       reconnectionDelay: 1000,
       reconnectionAttempts: 10,

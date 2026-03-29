@@ -79,6 +79,13 @@ const ChatPage: React.FC = () => {
     });
   }, [socket]);
 
+  // ─── Auto-join socket room upon connection/selection ──────
+  useEffect(() => {
+    if (socket.isConnected && selectedConv) {
+      socket.joinConversation(selectedConv.id);
+    }
+  }, [socket.isConnected, selectedConv, socket]);
+
   // ─── Load conversations ─────────────────────────────────
   useEffect(() => {
     loadConversations();
@@ -113,8 +120,7 @@ const ChatPage: React.FC = () => {
       const conv = await chatApi.getConversation(id);
       setSelectedConv(conv);
 
-      // Join socket room
-      socket.joinConversation(id);
+      // (Auto-join is now handled by the useEffect above!)
 
       // Load messages
       const result = await chatApi.getMessages(id);
