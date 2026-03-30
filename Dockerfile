@@ -11,6 +11,9 @@ COPY . .
 ARG VITE_API_BASE_URL=https://dorm-api.tuanstark.id.vn
 ENV VITE_API_BASE_URL=${VITE_API_BASE_URL}
 
+ARG VITE_CHAT_WS_URL=https://dorm-api.tuanstark.id.vn
+ENV VITE_CHAT_WS_URL=${VITE_CHAT_WS_URL}
+
 RUN npm run build
 
 # Production: nginx serves static SPA (client-side routing)

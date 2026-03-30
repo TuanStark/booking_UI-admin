@@ -15,6 +15,7 @@ import {
   Archive,
   ChevronLeft,
 } from 'lucide-react';
+import { useToast } from '@/components/ui/use-toast';
 
 // ═══════════════════════════════════════════════════════════
 // Admin Chat Page — 2-panel layout
@@ -26,6 +27,7 @@ const ChatPage: React.FC = () => {
   const { conversationId } = useParams<{ conversationId?: string }>();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { toast } = useToast();
 
   // ─── State ──────────────────────────────────────────────
   const [conversations, setConversations] = useState<Conversation[]>([]);
@@ -38,7 +40,7 @@ const ChatPage: React.FC = () => {
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<Record<string, string>>({});
-  
+
   // Real user names dictionary: { [userId]: userName }
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const fetchedUserIds = useRef<Set<string>>(new Set());
@@ -46,6 +48,11 @@ const ChatPage: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const selectedConvIdRef = useRef<string | null>(null);
+
+  useEffect(() => {
+    selectedConvIdRef.current = selectedConv ? selectedConv.id : null;
+  }, [selectedConv]);
 
   // ─── Socket ─────────────────────────────────────────────
   const socket = useChatSocket();
@@ -53,16 +60,54 @@ const ChatPage: React.FC = () => {
   // Register socket event handlers
   useEffect(() => {
     socket.onNewMessage((msg) => {
-      setMessages((prev) => [...prev, msg]);
-      // Update conversation list
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === msg.conversationId
-            ? { ...c, lastMessageText: msg.content, lastMessageAt: msg.createdAt }
-            : c,
-        ),
-      );
-      scrollToBottom();
+      const isCurrentConv = selectedConvIdRef.current === msg.conversationId;
+
+      if (isCurrentConv) {
+        setMessages((prev) => {
+          if (prev.some((m) => m.id === msg.id)) return prev;
+          return [...prev, msg];
+        });
+        scrollToBottom();
+      } else if (msg.senderRole !== 'ADMIN') {
+        resolveUserNames([msg.senderId]);
+        const senderName = userNames[msg.senderId] || msg.senderName || 'Khách hàng';
+        toast({
+          title: `Tin nhắn mới từ ${senderName}`,
+          description: msg.content.length > 50 ? msg.content.substring(0, 50) + '...' : msg.content,
+        });
+
+        // Tự động play một đoạn âm thanh ting nhỏ
+        try {
+          const audio = new Audio('/public/notification.mp3'); // or generic beep
+          audio.volume = 0.5;
+          // Có thể lỗi ngầm nếu browser deny autoplay without interaction, ta bọc trong try catch
+          audio.play().catch(() => { });
+        } catch (e) { }
+      }
+
+      // Update conversation list & Bump to Top
+      setConversations((prev) => {
+        const index = prev.findIndex((c) => c.id === msg.conversationId);
+        if (index === -1) return prev; // If totally new, let onNewConversation handle it
+
+        const updatedConv = { ...prev[index], lastMessageText: msg.content, lastMessageAt: msg.createdAt };
+
+        // Increase unread count manually if not looking at this conv
+        if (!isCurrentConv && msg.senderRole !== 'ADMIN') {
+          const mParticipants = updatedConv.participants?.map(p => {
+            if (p.role === 'ADMIN' && p.userId === (user as any)?.id) {
+              return { ...p, unreadCount: (p.unreadCount || 0) + 1 };
+            }
+            return p;
+          });
+          if (updatedConv.participants) updatedConv.participants = mParticipants as any;
+        }
+
+        const newArr = [...prev];
+        newArr.splice(index, 1);
+        newArr.unshift(updatedConv);
+        return newArr;
+      });
     });
 
     socket.onTyping((data) => {
@@ -415,10 +460,15 @@ const ChatPage: React.FC = () => {
                 return (
                   <React.Fragment key={msg.id}>
                     {showDate && (
-                      <div className="text-center">
-                        <span className="text-[10px] bg-gray-200 dark:bg-gray-800 text-gray-500 px-3 py-0.5 rounded-full">
-                          {formatDate(msg.createdAt)}
-                        </span>
+                      <div className="relative my-6">
+                        <div className="absolute inset-0 flex items-center">
+                          <div className="w-full border-t border-gray-200 dark:border-gray-800" />
+                        </div>
+                        <div className="relative flex justify-center text-xs">
+                          <span className="bg-gray-50 dark:bg-gray-950 px-4 text-gray-500 font-medium">
+                            {formatDate(msg.createdAt)}
+                          </span>
+                        </div>
                       </div>
                     )}
 
