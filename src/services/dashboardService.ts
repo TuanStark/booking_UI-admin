@@ -109,6 +109,38 @@ class DashboardService {
             throw error;
         }
     }
+
+    /**
+     * Fetch calendar overview
+     */
+    async getCalendar(startDate: string, endDate: string, buildingId?: string | null, roomId?: string | null): Promise<any> {
+        const token = this.getToken();
+        let queryParams = `?startDate=${startDate}&endDate=${endDate}`;
+        if (buildingId) queryParams += `&buildingId=${buildingId}`;
+        if (roomId) queryParams += `&roomId=${roomId}`;
+        
+        const url = `${this.baseURL}/calendar${queryParams}`;
+
+        const headers: HeadersInit = {
+            'Content-Type': 'application/json',
+            ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        };
+
+        try {
+            const response = await fetch(url, { headers });
+            
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+            }
+            
+            const result = await response.json();
+            return result.data;
+        } catch (error) {
+            console.error('[DashboardService] Failed to fetch calendar:', error);
+            throw error;
+        }
+    }
 }
 
 export const dashboardService = new DashboardService();

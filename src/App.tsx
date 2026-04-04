@@ -29,6 +29,7 @@ import ReviewsPage from './pages/reviews/ReviewsPage';
 import SettingsPage from './pages/settings/SettingsPage';
 import RoomsPage from './pages/rooms/RoomsPage';
 import RoomDetailPage from './pages/rooms/RoomDetailPage';
+import RoomsOverviewCalendarPage from './pages/rooms/RoomsOverviewCalendarPage';
 import PostsPage from './pages/posts/PostsPage';
 import PostFormPage from './pages/posts/PostFormPage';
 import { Toaster } from '@/components/ui/toaster';
@@ -73,6 +74,7 @@ function App() {
               <Route path="/users" element={<UsersPage />} />
               <Route path="/buildings" element={<BuildingsPage />} />
               <Route path="/rooms" element={<RoomsPage />} />
+              <Route path="/rooms/calendar" element={<RoomsOverviewCalendarPage />} />
               <Route path="/rooms/:id" element={<RoomDetailPage />} />
               <Route path="/bookings" element={<BookingsLayout />}>
                 <Route index element={<BookingsListPage />} />

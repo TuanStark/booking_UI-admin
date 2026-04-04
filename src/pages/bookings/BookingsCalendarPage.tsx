@@ -436,7 +436,7 @@ const BookingsCalendarPage = () => {
           </div>
         )}
       </div>
-      
+
     </div>
   );
 };

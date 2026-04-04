@@ -23,6 +23,7 @@ import {
   LogOut,
   Menu,
   Moon,
+  Grid,
   Sun,
   FileText,
   Building,
@@ -63,6 +64,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       name: 'Phòng',
       href: '/rooms',
       icon: Home,
+    },
+    {
+      name: 'Lịch phòng',
+      href: '/rooms/calendar',
+      icon: Grid,
     },
     {
       name: 'Đặt phòng',

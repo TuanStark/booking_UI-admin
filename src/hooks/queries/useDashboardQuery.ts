@@ -9,3 +9,20 @@ export const useDashboardStats = () => {
         refetchOnWindowFocus: false,
     });
 };
+
+export const useCalendar = (
+    startDate?: string,
+    endDate?: string,
+    buildingId?: string | null,
+    roomId?: string | null,
+    options?: { enabled?: boolean }
+) => {
+    return useQuery({
+        queryKey: ['calendar', startDate, endDate, buildingId, roomId],
+        queryFn: () => {
+            if (!startDate || !endDate) throw new Error('Missing params');
+            return dashboardService.getCalendar(startDate, endDate, buildingId, roomId);
+        },
+        enabled: options?.enabled !== false && !!startDate && !!endDate,
+    });
+};
