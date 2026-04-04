@@ -1,4 +1,5 @@
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useEffect } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 
 import PaymentStatsCards from './PaymentStatsCards';
 import RevenueChart from './RevenueChart';
@@ -20,6 +21,12 @@ const PaymentsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [detailPaymentId, setDetailPaymentId] = useState<string | null>(null);
 
+  const debouncedSearch = useDebouncedValue(searchTerm.trim(), 400);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, selectedMethod, selectedStatus]);
+
   const handleViewPayment = useCallback((id: string) => {
     setDetailPaymentId(id);
   }, []);
@@ -34,7 +41,7 @@ const PaymentsPage: React.FC = () => {
     limit: 10,
     method: selectedMethod !== 'all' ? selectedMethod : undefined,
     status: selectedStatus !== 'all' ? selectedStatus : undefined,
-    search: searchTerm || undefined,
+    search: debouncedSearch || undefined,
   });
 
   const payments = response?.data || [];

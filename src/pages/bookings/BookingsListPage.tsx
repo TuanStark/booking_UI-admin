@@ -1,4 +1,5 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +21,12 @@ const BookingsListPage = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [detailBookingId, setDetailBookingId] = useState<string | null>(null);
 
+  const debouncedSearch = useDebouncedValue(searchTerm.trim(), 400);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, selectedStatus, selectedPaymentStatus]);
+
   const handleViewDetail = useCallback((bookingId: string) => {
     setDetailBookingId(bookingId);
   }, []);
@@ -33,7 +40,7 @@ const BookingsListPage = () => {
     limit: 10,
     status: selectedStatus !== 'all' ? selectedStatus : undefined,
     paymentStatus: selectedPaymentStatus !== 'all' ? selectedPaymentStatus : undefined,
-    search: searchTerm || undefined,
+    search: debouncedSearch || undefined,
   });
 
   const approveBookingMutation = useApproveBooking();
