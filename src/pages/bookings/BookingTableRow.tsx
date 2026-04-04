@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, XCircle } from 'lucide-react';
+import { CheckCircle, Eye, XCircle } from 'lucide-react';
 import { Booking } from '@/types';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
 import { formatVND } from '@/utils/formatCurrency';
@@ -9,12 +9,14 @@ interface BookingTableRowProps {
   booking: Booking;
   onApprove: (bookingId: string) => void;
   onReject: (bookingId: string) => void;
+  onViewDetail: (bookingId: string) => void;
 }
 
 const BookingTableRow: React.FC<BookingTableRowProps> = ({
   booking,
   onApprove,
   onReject,
+  onViewDetail,
 }) => {
   const [rejectConfirmOpen, setRejectConfirmOpen] = useState(false);
   const [approveConfirmOpen, setApproveConfirmOpen] = useState(false);
@@ -35,28 +37,6 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
   const confirmApprove = () => {
     onApprove(booking.id);
     setApproveConfirmOpen(false);
-  };
-
-  const getPaymentStatusBadge = (status: string) => {
-    const colors = {
-      paid: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-      pending: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400',
-      failed: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400',
-      refunded: 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300',
-    };
-    
-    const labels = {
-      paid: 'Đã thanh toán',
-      pending: 'Chờ thanh toán',
-      failed: 'Thất bại',
-      refunded: 'Hoàn tiền',
-    };
-    
-    return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status as keyof typeof colors] || colors.pending}`}>
-        {labels[status as keyof typeof labels] || status}
-      </span>
-    );
   };
 
   const getBookingStatusBadge = (status: string) => {
@@ -126,42 +106,37 @@ const BookingTableRow: React.FC<BookingTableRowProps> = ({
           {formatVND(booking.totalAmount)}
         </td>
         <td className="py-3 px-4">
-          {getPaymentStatusBadge(booking.paymentStatus)}
-        </td>
-        <td className="py-3 px-4">
           {getBookingStatusBadge(booking.bookingStatus)}
         </td>
         <td className="py-3 px-4">
-          {booking.bookingStatus === 'pending' && (
-            <div className="flex items-center space-x-2">
-              <Button
-                size="sm"
-                onClick={handleApproveClick}
-                className="bg-green-600 hover:bg-green-700 text-white"
-              >
-                <CheckCircle className="h-4 w-4 mr-1" />
-                Duyệt
-              </Button>
-              <Button
-                size="sm"
-                variant="destructive"
-                onClick={handleRejectClick}
-              >
-                <XCircle className="h-4 w-4 mr-1" />
-                Từ chối
-              </Button>
-            </div>
-          )}
-          {booking.bookingStatus !== 'pending' && (
-            <span className="text-sm text-gray-600 dark:text-gray-400">
-              {booking.bookingStatus === 'confirmed' && 'Đã xác nhận'}
-              {booking.bookingStatus === 'cancelled' && 'Đã hủy'}
-              {booking.bookingStatus === 'completed' && 'Hoàn tất'}
-              {booking.bookingStatus === 'active' && 'Đang thuê'}
-              {booking.bookingStatus === 'expiring_soon' && 'Sắp hết hạn'}
-              {booking.bookingStatus === 'queued' && 'Đặt trước'}
-            </span>
-          )}
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              size="sm"
+              variant="outline"
+              type="button"
+              onClick={() => onViewDetail(booking.id)}
+              className="border-gray-300 dark:border-gray-600"
+            >
+              <Eye className="h-4 w-4 mr-1" />
+              Chi tiết
+            </Button>
+            {booking.bookingStatus === 'pending' && (
+              <>
+                <Button
+                  size="sm"
+                  onClick={handleApproveClick}
+                  className="bg-green-600 hover:bg-green-700 text-white"
+                >
+                  <CheckCircle className="h-4 w-4 mr-1" />
+                  Duyệt
+                </Button>
+                <Button size="sm" variant="destructive" onClick={handleRejectClick}>
+                  <XCircle className="h-4 w-4 mr-1" />
+                  Từ chối
+                </Button>
+              </>
+            )}
+          </div>
         </td>
       </tr>
 

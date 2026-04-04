@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,6 +27,11 @@ const UsersPage: React.FC = () => {
   const [userToDelete, setUserToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const debouncedSearch = useDebouncedValue(searchTerm.trim(), 400);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch, selectedRole, selectedStatus]);
   // Mutations
   const createUserMutation = useCreateUser();
   const updateUserMutation = useUpdateUser();
@@ -37,7 +43,7 @@ const UsersPage: React.FC = () => {
     limit: 10,
     role: selectedRole !== 'all' ? selectedRole : undefined,
     status: selectedStatus !== 'all' ? selectedStatus : undefined,
-    search: searchTerm || undefined,
+    search: debouncedSearch || undefined,
   });
 
   const users = response?.data || [];
@@ -197,7 +203,7 @@ const UsersPage: React.FC = () => {
               <div>
                 <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Sinh viên</p>
                 <p className="text-2xl font-bold text-gray-900 dark:text-white">
-                  {users.filter(u => u.role.name === Role.STUDENT).length}
+                  {users.filter(u => u.role.name === Role.USER).length}
                 </p>
               </div>
               <UsersIcon className="h-8 w-8 text-purple-600" />
@@ -243,7 +249,7 @@ const UsersPage: React.FC = () => {
               className="px-4 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">Tất cả vai trò</option>
-              <option value="student">Sinh viên</option>
+              <option value="user">Sinh viên</option>
               <option value="admin">Quản trị</option>
             </select>
             <select

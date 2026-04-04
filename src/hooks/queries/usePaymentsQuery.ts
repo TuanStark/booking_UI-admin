@@ -24,14 +24,17 @@ export const usePayments = (params?: GetPaymentsParams) => {
 /**
  * Hook để fetch chi tiết một payment
  */
-export const usePayment = (id: string | undefined) => {
+export const usePayment = (
+    id: string | undefined,
+    queryOptions?: { enabled?: boolean },
+) => {
     return useQuery({
         queryKey: queryKeys.payments.detail(id || ''),
         queryFn: async () => {
             if (!id) throw new Error('Payment ID is required');
             return await paymentService.getById(id);
         },
-        enabled: !!id,
+        enabled: (queryOptions?.enabled !== false) && !!id,
     });
 };
 

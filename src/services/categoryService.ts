@@ -50,8 +50,20 @@ class CategoryService {
         }
     }
 
-    async findAll(): Promise<ResponseData<PostCategory[]>> {
-        return this.request<ResponseData<PostCategory[]>>('');
+    async findAll(params?: { search?: string; page?: number; limit?: number }): Promise<ResponseData<PostCategory[]>> {
+        const queryParams = new URLSearchParams();
+        if (params?.search) {
+            queryParams.append('search', params.search);
+        }
+        if (params?.page) {
+            queryParams.append('page', params.page.toString());
+        }
+        if (params?.limit) {
+            queryParams.append('limit', params.limit.toString());
+        }
+        const queryString = queryParams.toString();
+        const endpoint = queryString ? `?${queryString}` : '';
+        return this.request<ResponseData<PostCategory[]>>(endpoint);
     }
 
     async findOne(idOrSlug: string): Promise<ResponseData<PostCategory>> {

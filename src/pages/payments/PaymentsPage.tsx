@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useCallback } from 'react';
 
 import PaymentStatsCards from './PaymentStatsCards';
 import RevenueChart from './RevenueChart';
@@ -10,6 +10,7 @@ import { Card, CardContent } from '@/components/ui/card';
 
 import Pagination from '@/components/ui/pagination';
 import { toMoneyNumber } from '@/utils/formatCurrency';
+import { PaymentDetailDialog } from './PaymentDetailDialog';
 
 const PaymentsPage: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,6 +18,15 @@ const PaymentsPage: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'pending' | 'completed' | 'failed' | 'refunded'>('all');
 
   const [currentPage, setCurrentPage] = useState(1);
+  const [detailPaymentId, setDetailPaymentId] = useState<string | null>(null);
+
+  const handleViewPayment = useCallback((id: string) => {
+    setDetailPaymentId(id);
+  }, []);
+
+  const handleDetailOpenChange = useCallback((isOpen: boolean) => {
+    if (!isOpen) setDetailPaymentId(null);
+  }, []);
 
   // Use TanStack Query for Payments
   const { data: response, isLoading, isError } = usePayments({
@@ -78,18 +88,19 @@ const PaymentsPage: React.FC = () => {
   const filteredPayments = useMemo(() => {
     if (!searchTerm) return payments;
 
-    return payments.filter(payment => {
-      const matchesSearch = payment.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        payment.bookingId.includes(searchTerm) ||
-        payment.id.includes(searchTerm);
-      return matchesSearch;
+    const q = searchTerm.toLowerCase();
+    return payments.filter((payment) => {
+      const email = payment.userEmail?.toLowerCase() ?? '';
+      const student = payment.studentId?.toLowerCase() ?? '';
+      return (
+        payment.userName.toLowerCase().includes(q) ||
+        email.includes(q) ||
+        student.includes(q) ||
+        (payment.bookingId && payment.bookingId.toLowerCase().includes(q)) ||
+        payment.id.toLowerCase().includes(q)
+      );
     });
   }, [payments, searchTerm]);
-
-  const handleViewPayment = (paymentId: string) => {
-    // TODO: Implement view payment details modal/page
-    console.log('View payment:', paymentId);
-  };
 
   if (isLoading && payments.length === 0) {
     return (
@@ -157,6 +168,12 @@ const PaymentsPage: React.FC = () => {
           />
         </div>
       )}
+
+      <PaymentDetailDialog
+        paymentId={detailPaymentId}
+        open={detailPaymentId !== null}
+        onOpenChange={handleDetailOpenChange}
+      />
     </div>
   );
 };

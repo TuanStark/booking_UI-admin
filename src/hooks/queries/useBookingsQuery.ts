@@ -28,14 +28,17 @@ export const useBookings = (
 /**
  * Hook để fetch chi tiết một booking
  */
-export const useBooking = (id: string | undefined) => {
+export const useBooking = (
+    id: string | undefined,
+    queryOptions?: { enabled?: boolean }
+) => {
     return useQuery({
         queryKey: queryKeys.bookings.detail(id || ''),
         queryFn: async () => {
             if (!id) throw new Error('Booking ID is required');
             return await bookingService.getById(id);
         },
-        enabled: !!id,
+        enabled: (queryOptions?.enabled !== false) && !!id,
     });
 };
 

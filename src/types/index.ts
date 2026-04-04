@@ -57,6 +57,8 @@ export interface Booking {
   userId: string;
   userName: string;
   userEmail: string;
+  /** Mã sinh viên (từ user.studentId trên API khi có) */
+  studentId?: string;
   roomId: string;
   roomNumber: string;
   buildingName: string;
@@ -75,6 +77,10 @@ export interface Payment {
   bookingId: string;
   userId: string;
   userName: string;
+  /** Từ user.email / gateway enrich */
+  userEmail?: string;
+  /** Từ user.studentId khi auth-service trả về */
+  studentId?: string;
   amount: number;
   method: 'MOMO' | 'VNPay' | 'Bank Transfer' | 'Cash';
   status: 'pending' | 'completed' | 'failed' | 'refunded';
@@ -149,7 +155,7 @@ export interface AuthResponse {
 }
 
 export interface RefreshTokenResponse {
-  token: string;
+  accessToken: string;
   refreshToken: string;
 }
 

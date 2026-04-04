@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useDebouncedValue } from '@/hooks/useDebouncedValue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -23,6 +24,11 @@ const BuildingsPage: React.FC = () => {
   const [buildingToDelete, setBuildingToDelete] = useState<string | null>(null);
   const { toast } = useToast();
 
+  const debouncedSearch = useDebouncedValue(searchTerm.trim(), 400);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [debouncedSearch]);
   // Mutations
   const createBuildingMutation = useCreateBuilding();
   const updateBuildingMutation = useUpdateBuilding();
@@ -32,6 +38,7 @@ const BuildingsPage: React.FC = () => {
   const { data: response, isLoading, isError } = useBuildings({
     page: currentPage,
     limit: 10,
+    search: debouncedSearch || undefined,
   });
 
   const buildings = response?.data || [];

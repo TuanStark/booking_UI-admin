@@ -4,6 +4,20 @@ import { ResponseData } from '@/types/globalClass';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
+/** api-gateway wraps upstream as `{ status, data, headers }` */
+function unwrapGatewayBody<T>(json: unknown): T {
+  if (
+    json &&
+    typeof json === 'object' &&
+    'data' in json &&
+    'status' in json &&
+    'headers' in json
+  ) {
+    return (json as { data: T }).data;
+  }
+  return json as T;
+}
+
 class AuthService {
   private baseURL: string;
 
@@ -94,10 +108,21 @@ class AuthService {
   }
 
   async refreshToken(refreshToken: string): Promise<RefreshTokenResponse> {
-    return this.request<RefreshTokenResponse>('/refresh', {
-      method: 'POST',
-      body: JSON.stringify({ refreshToken }),
-    });
+    const raw = await this.request<RefreshTokenResponse | Record<string, unknown>>(
+      '/refresh',
+      {
+        method: 'POST',
+        body: JSON.stringify({ refreshToken }),
+      },
+    );
+    const body = unwrapGatewayBody<RefreshTokenResponse>(raw);
+    if (!body?.accessToken) {
+      throw new Error('Invalid refresh response: missing accessToken');
+    }
+    return {
+      accessToken: body.accessToken,
+      refreshToken: body.refreshToken ?? refreshToken,
+    };
   }
 
   async getCurrentUser(): Promise<User> {

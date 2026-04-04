@@ -5,6 +5,7 @@ import { BuildingFormData } from '@/lib/validations';
 export interface GetBuildingsParams {
   page?: number;
   limit?: number;
+  search?: string;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
@@ -80,6 +81,9 @@ class BuildingService {
     }
     if (params?.limit) {
       queryParams.append('limit', params.limit.toString());
+    }
+    if (params?.search) {
+      queryParams.append('search', params.search);
     }
 
     const queryString = queryParams.toString();

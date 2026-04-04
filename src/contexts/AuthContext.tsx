@@ -1,8 +1,16 @@
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import React, {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  useCallback,
+  ReactNode,
+} from 'react';
 import { authService } from '../services/authService';
 import { jwtDecode } from 'jwt-decode';
 import { AuthResponse, AuthState, LoginCredentials, RegisterData, User } from '@/types';
 import { ResponseData } from '@/types/globalClass';
+import { getTokenExpirationTime, isTokenExpired } from '@/utils/authUtils';
 
 
 
@@ -29,19 +37,79 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoading: true,
   });
 
-  // Initialize auth state from localStorage
+  const logout = useCallback(() => {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('refresh_token');
+    localStorage.removeItem('user_data');
+    setAuthState({
+      user: null,
+      accessToken: null,
+      refreshToken: null,
+      isAuthenticated: false,
+      isLoading: false,
+    });
+    authService.logout().catch(console.error);
+  }, []);
+
+  const refreshAuthToken = useCallback(async () => {
+    const storedRefresh = localStorage.getItem('refresh_token');
+    if (!storedRefresh) {
+      logout();
+      throw new Error('No refresh token available');
+    }
+    try {
+      const { accessToken, refreshToken } =
+        await authService.refreshToken(storedRefresh);
+      localStorage.setItem('auth_token', accessToken);
+      localStorage.setItem('refresh_token', refreshToken);
+      setAuthState(prev => ({
+        ...prev,
+        accessToken,
+        refreshToken,
+        isAuthenticated: true,
+      }));
+    } catch (error) {
+      logout();
+      throw error;
+    }
+  }, [logout]);
+
+  // Initialize auth state from localStorage (refresh if access JWT expired)
   useEffect(() => {
     const initializeAuth = async () => {
       try {
         const token = localStorage.getItem('auth_token');
-        const refreshToken = localStorage.getItem('refresh_token');
+        let refreshToken = localStorage.getItem('refresh_token');
         const userData = localStorage.getItem('user_data');
 
         if (token && userData) {
+          let accessToken = token;
+          if (isTokenExpired(token)) {
+            if (!refreshToken) {
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('user_data');
+              setAuthState(prev => ({ ...prev, isLoading: false }));
+              return;
+            }
+            try {
+              const refreshed = await authService.refreshToken(refreshToken);
+              accessToken = refreshed.accessToken;
+              refreshToken = refreshed.refreshToken;
+              localStorage.setItem('auth_token', accessToken);
+              localStorage.setItem('refresh_token', refreshToken);
+            } catch {
+              localStorage.removeItem('auth_token');
+              localStorage.removeItem('refresh_token');
+              localStorage.removeItem('user_data');
+              setAuthState(prev => ({ ...prev, isLoading: false }));
+              return;
+            }
+          }
+
           const user = JSON.parse(userData);
           setAuthState({
             user,
-            accessToken: token,
+            accessToken,
             refreshToken,
             isAuthenticated: true,
             isLoading: false,
@@ -58,21 +126,27 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     initializeAuth();
   }, []);
 
-  // Auto refresh token before expiry
+  // Proactive refresh when access token is close to expiry
   useEffect(() => {
     if (!authState.accessToken) return;
 
-    const refreshInterval = setInterval(async () => {
-      try {
-        // await refreshAuthToken();
-      } catch (error) {
-        console.error('Auto token refresh failed:', error);
-        logout();
+    const tick = async () => {
+      const token = localStorage.getItem('auth_token');
+      const exp = token ? getTokenExpirationTime(token) : null;
+      if (!exp) return;
+      if (exp - Date.now() < 120_000) {
+        try {
+          await refreshAuthToken();
+        } catch {
+          /* refreshAuthToken already called logout */
+        }
       }
-    }, 14 * 60 * 1000); // Refresh every 14 minutes
+    };
 
-    return () => clearInterval(refreshInterval);
-  }, [authState.accessToken]);
+    tick();
+    const id = setInterval(tick, 5 * 60 * 1000);
+    return () => clearInterval(id);
+  }, [authState.accessToken, refreshAuthToken]);
 
   const login = async (credentials: LoginCredentials) => {
     try {
@@ -148,41 +222,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('refresh_token');
-    localStorage.removeItem('user_data');
-    setAuthState({
-      user: null,
-      accessToken: null,
-      refreshToken: null,
-      isAuthenticated: false,
-      isLoading: false,
-    });
-    authService.logout().catch(console.error);
-  };
-
-  // const refreshAuthToken = async () => {
-  //   if (!authState.refreshToken) {
-  //     throw new Error('No refresh token available');
-  //   }
-  //   try {
-  //     const response = await authService.refreshToken(authState.refreshToken);
-  //     const { accessToken, refreshToken } = response.token;
-      
-  //     localStorage.setItem('auth_token', accessToken);
-  //     localStorage.setItem('refresh_token', refreshToken);
-  //     setAuthState(prev => ({
-  //       ...prev,
-  //       accessToken,
-  //       refreshToken,
-  //     }));
-  //   } catch (error) {
-  //     logout();
-  //     throw error;
-  //   }
-  // };
-
   const updateUser = (userData: Partial<User>) => {
     if (!authState.user) return;
 
@@ -200,8 +239,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     login,
     register,
     logout,
-    // refreshAuthToken as () => Promise<void>,
-    refreshAuthToken: async () => {},
+    refreshAuthToken,
     updateUser,
   };
 

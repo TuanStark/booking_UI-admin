@@ -290,6 +290,10 @@ class BookingService {
     const userName = booking.userName || user.name || user.userName || '';
     const userEmail = booking.userEmail || user.email || user.userEmail || '';
     const userId = booking.userId || user.id || booking.user?.id || '';
+    const studentId =
+      (typeof user.studentId === 'string' && user.studentId) ||
+      (typeof booking.studentId === 'string' && booking.studentId) ||
+      '';
     
     // Extract room and building info from details array
     let roomNumber = '';
@@ -346,6 +350,7 @@ class BookingService {
       userId: userId,
       userName: userName,
       userEmail: userEmail,
+      ...(studentId ? { studentId } : {}),
       roomId: roomId,
       roomNumber: roomNumber,
       buildingName: buildingName,

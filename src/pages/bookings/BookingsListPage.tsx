@@ -1,10 +1,11 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Search } from 'lucide-react';
 import { PaginationMeta } from '@/types/globalClass';
 import BookingTableRow from './BookingTableRow';
+import { BookingDetailDialog } from './BookingDetailDialog';
 import Pagination from '@/components/ui/pagination';
 import { useBookings, useApproveBooking, useRejectBooking } from '@/hooks/queries';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -17,6 +18,15 @@ const BookingsListPage = () => {
   const [selectedStatus, setSelectedStatus] = useState<'all' | 'pending' | 'confirmed' | 'cancelled' | 'completed' | 'active' | 'expiring_soon' | 'queued'>('all');
   const [selectedPaymentStatus, setSelectedPaymentStatus] = useState<'all' | 'pending' | 'paid' | 'failed' | 'refunded'>('all');
   const [currentPage, setCurrentPage] = useState(1);
+  const [detailBookingId, setDetailBookingId] = useState<string | null>(null);
+
+  const handleViewDetail = useCallback((bookingId: string) => {
+    setDetailBookingId(bookingId);
+  }, []);
+
+  const handleDetailOpenChange = useCallback((open: boolean) => {
+    if (!open) setDetailBookingId(null);
+  }, []);
 
   const { data, isLoading, error, refetch } = useBookings({
     page: currentPage,
@@ -225,7 +235,6 @@ const BookingsListPage = () => {
                       <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Nhận phòng</th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Trả phòng</th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Số tiền</th>
-                      <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Thanh toán</th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Trạng thái</th>
                       <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Hành động</th>
                     </tr>
@@ -237,6 +246,7 @@ const BookingsListPage = () => {
                         booking={booking}
                         onApprove={handleApproveBooking}
                         onReject={handleRejectBooking}
+                        onViewDetail={handleViewDetail}
                       />
                     ))}
                   </tbody>
@@ -255,6 +265,12 @@ const BookingsListPage = () => {
           )}
         </CardContent>
       </Card>
+
+      <BookingDetailDialog
+        bookingId={detailBookingId}
+        open={detailBookingId !== null}
+        onOpenChange={handleDetailOpenChange}
+      />
     </div>
   );
 };

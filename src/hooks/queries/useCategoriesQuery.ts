@@ -6,13 +6,22 @@ import { PostCategory, CreateCategoryDto, UpdateCategoryDto } from '@/types';
 // ============ QUERIES ============
 
 /**
- * Hook để fetch danh sách categories
+ * Params cho việc lấy danh sách categories
  */
-export const useCategories = () => {
+export interface GetCategoriesParams {
+    search?: string;
+    page?: number;
+    limit?: number;
+}
+
+/**
+ * Hook để fetch danh sách categories với search/filter
+ */
+export const useCategories = (params?: GetCategoriesParams) => {
     return useQuery({
-        queryKey: queryKeys.categories.list(),
+        queryKey: queryKeys.categories.list(params),
         queryFn: async () => {
-            const response = await categoryService.findAll();
+            const response = await categoryService.findAll(params);
             // Handle response structure
             if (response.data) {
                 const responseData = response.data as any;

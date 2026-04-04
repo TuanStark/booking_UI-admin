@@ -111,7 +111,6 @@ class PaymentService {
     const queryString = queryParams.toString();
     const endpoint = queryString ? `/?${queryString}` : '/';
     const response = await this.authenticatedRequest<any>(endpoint);
-    console.log('response', response);
     
     // Handle nested response structure
     let paymentsData: any[] = [];
@@ -326,10 +325,20 @@ class PaymentService {
       }
     }
     
-    // Extract user info - might be nested
     const user = payment.user || {};
-    const userName = payment.userName || user.name || user.userName || '';
-    const userId = payment.userId || user.id || payment.user?.id || '';
+    const userName =
+      payment.userName ||
+      user.name ||
+      user.userName ||
+      `${user.firstName || ''} ${user.lastName || ''}`.trim() ||
+      '';
+    const userId = payment.userId || user.id || '';
+    const userEmail =
+      payment.userEmail || user.email || user.userEmail || undefined;
+    const studentId =
+      payment.studentId ||
+      (typeof user.studentId === 'string' ? user.studentId : undefined) ||
+      undefined;
     
     // Extract booking info
     const bookingId = payment.bookingId || payment.booking?.id || payment.bookingId || '';
@@ -339,6 +348,8 @@ class PaymentService {
       bookingId: bookingId,
       userId: userId,
       userName: userName,
+      ...(userEmail ? { userEmail } : {}),
+      ...(studentId ? { studentId } : {}),
       amount: toMoneyNumber(payment.amount ?? payment.totalAmount),
       method: method,
       status: status,

@@ -56,7 +56,13 @@ const PaymentTableRow: React.FC<PaymentTableRowProps> = ({ payment, onView }) =>
     <tr className="border-b border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
       <td className="py-3 px-4 text-gray-600 dark:text-gray-400 text-sm">{payment.id}</td>
       <td className="py-3 px-4">
-        <p className="font-medium text-gray-900 dark:text-white">{payment.userName}</p>
+        <p className="font-medium text-gray-900 dark:text-white">{payment.userName || '—'}</p>
+        {payment.userEmail ? (
+          <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{payment.userEmail}</p>
+        ) : null}
+        {payment.studentId ? (
+          <p className="text-xs text-gray-500 dark:text-gray-400">Mã SV: {payment.studentId}</p>
+        ) : null}
       </td>
       <td className="py-3 px-4 font-medium text-gray-900 dark:text-white">
         {formatVND(payment.amount)}
