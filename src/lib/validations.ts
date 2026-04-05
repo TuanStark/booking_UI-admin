@@ -82,10 +82,11 @@ export const roomSchema = z.object({
     ),
   squareMeter: z
     .number()
-    .min(0, 'Diện tích không được âm')
-    .max(1000, 'Diện tích không được vượt quá 1000 m²')
+    .int('Diện tích phải là số nguyên')
+    .min(10, 'Diện tích phải từ 10 m² trở lên')
+    .max(50, 'Diện tích không được vượt quá 50 m²')
     .optional()
-    .default(0),
+    .default(10),
   bedCount: z
     .number()
     .min(0, 'Số giường không được âm')

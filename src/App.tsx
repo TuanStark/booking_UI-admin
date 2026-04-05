@@ -21,6 +21,7 @@ import Layout from './components/layout/Layout';
 import DashboardPage from './pages/dashboard/DashboardPage';
 import UsersPage from './pages/users/UsersPage';
 import BuildingsPage from './pages/buildings/BuildingsPage';
+import BuildingDetailPage from './pages/buildings/BuildingDetailPage';
 import BookingsLayout from './pages/bookings/BookingsLayout';
 import BookingsListPage from './pages/bookings/BookingsListPage';
 import BookingsCalendarPage from './pages/bookings/BookingsCalendarPage';
@@ -73,6 +74,7 @@ function App() {
               <Route path="/dashboard" element={<DashboardPage />} />
               <Route path="/users" element={<UsersPage />} />
               <Route path="/buildings" element={<BuildingsPage />} />
+              <Route path="/buildings/:id" element={<BuildingDetailPage />} />
               <Route path="/rooms" element={<RoomsPage />} />
               <Route path="/rooms/calendar" element={<RoomsOverviewCalendarPage />} />
               <Route path="/rooms/:id" element={<RoomDetailPage />} />

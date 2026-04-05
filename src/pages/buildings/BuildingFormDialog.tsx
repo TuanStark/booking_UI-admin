@@ -275,7 +275,10 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
   const handleRemoveImageSlot = (index: number) => {
     const currentImages = formData.images || [];
     const newImages = currentImages.filter((_, i) => i !== index);
+    const currentFiles = [...imageFiles];
+    const newFiles = currentFiles.filter((_, i) => i !== index);
     setFormData(prev => ({ ...prev, images: newImages }));
+    setImageFiles(newFiles);
   };
 
   return (

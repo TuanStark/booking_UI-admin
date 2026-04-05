@@ -202,7 +202,7 @@ class RoomService {
     formData.append('capacity', data.capacity.toString());
     formData.append('price', data.price.toString());
     formData.append('buildingId', data.buildingId);
-    formData.append('squareMeter', (data.squareMeter || 0).toString());
+    formData.append('squareMeter', (data.squareMeter ?? 10).toString());
     formData.append('bedCount', (data.bedCount || 1).toString());
     formData.append('bathroomCount', (data.bathroomCount || 1).toString());
     formData.append('floor', (data.floor || 1).toString());
@@ -272,7 +272,7 @@ class RoomService {
     formData.append('capacity', data.capacity.toString());
     formData.append('price', data.price.toString());
     formData.append('buildingId', data.buildingId);
-    formData.append('squareMeter', (data.squareMeter || 0).toString());
+    formData.append('squareMeter', (data.squareMeter ?? 10).toString());
     formData.append('bedCount', (data.bedCount || 1).toString());
     formData.append('bathroomCount', (data.bathroomCount || 1).toString());
     formData.append('floor', (data.floor || 1).toString());

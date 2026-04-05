@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Edit, Trash2, Home } from 'lucide-react';
 import { Building } from '@/types';
-import ConfirmDialog from '@/components/ui/confirm-dialog';
+import { useNavigate } from 'react-router-dom';
 
 interface BuildingCardProps {
   building: Building;
@@ -16,22 +16,20 @@ const BuildingCard: React.FC<BuildingCardProps> = ({
   onEdit,
   onDelete,
 }) => {
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-
-  const handleDelete = () => {
-    setDeleteConfirmOpen(true);
-  };
-
-  const confirmDelete = () => {
-    onDelete(building.id);
-    setDeleteConfirmOpen(false);
-  };
+  const navigate = useNavigate();
 
   const hasImages = building.images && building.images.length > 0;
   const firstImage = hasImages ? building.images[0] : null;
 
+  const handleOpenDetail = () => {
+    navigate(`/buildings/${building.id}`);
+  };
+
   return (
-    <Card className="overflow-hidden h-[400px] flex flex-col">
+    <Card
+      className="overflow-hidden h-[400px] flex flex-col cursor-pointer hover:shadow-md transition-shadow"
+      onClick={handleOpenDetail}
+    >
       {/* Show first image as cover if available, otherwise show icon */}
       {firstImage ? (
         <div className="relative h-full w-full flex-1 overflow-hidden">
@@ -49,7 +47,10 @@ const BuildingCard: React.FC<BuildingCardProps> = ({
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => onEdit(building)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onEdit(building);
+              }}
               title="Chỉnh sửa tòa nhà"
               className="bg-white/90 hover:bg-white text-gray-900 backdrop-blur-sm"
             >
@@ -58,7 +59,10 @@ const BuildingCard: React.FC<BuildingCardProps> = ({
             <Button
               variant="ghost"
               size="icon"
-              onClick={handleDelete}
+              onClick={(e) => {
+                e.stopPropagation();
+                onDelete(building.id);
+              }}
               title="Xóa tòa nhà"
               className="bg-white/90 hover:bg-white text-red-600 backdrop-blur-sm"
             >
@@ -83,7 +87,10 @@ const BuildingCard: React.FC<BuildingCardProps> = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={() => onEdit(building)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onEdit(building);
+                  }}
                   title="Chỉnh sửa tòa nhà"
                 >
                   <Edit className="h-4 w-4" />
@@ -91,7 +98,10 @@ const BuildingCard: React.FC<BuildingCardProps> = ({
                 <Button
                   variant="ghost"
                   size="icon"
-                  onClick={handleDelete}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onDelete(building.id);
+                  }}
                   title="Xóa tòa nhà"
                 >
                   <Trash2 className="h-4 w-4 text-red-600" />
@@ -108,17 +118,6 @@ const BuildingCard: React.FC<BuildingCardProps> = ({
         </>
       )}
 
-      {/* Delete Confirmation Dialog */}
-      <ConfirmDialog
-        isOpen={deleteConfirmOpen}
-        onClose={() => setDeleteConfirmOpen(false)}
-        onConfirm={confirmDelete}
-        title="Xóa tòa nhà"
-        description={`Bạn có chắc chắn muốn xóa tòa nhà "${building.name}"? Hành động này không thể hoàn tác.`}
-        confirmText="Xóa"
-        cancelText="Hủy"
-        variant="destructive"
-      />
     </Card>
   );
 };

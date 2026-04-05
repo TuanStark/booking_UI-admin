@@ -37,7 +37,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
     name: '',
     capacity: 1,
     price: 0,
-    squareMeter: 0,
+    squareMeter: 10,
     bedCount: 1,
     bathroomCount: 1,
     floor: 1,
@@ -70,7 +70,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
         name: room.name,
         capacity: room.capacity,
         price: room.price,
-        squareMeter: room.squareMeter || 0,
+        squareMeter: room.squareMeter ?? 10,
         bedCount: room.bedCount || 1,
         bathroomCount: room.bathroomCount || 1,
         floor: room.floor || 1,
@@ -88,7 +88,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
         name: '',
         capacity: 1,
         price: 0,
-        squareMeter: 0,
+        squareMeter: 10,
         bedCount: 1,
         bathroomCount: 1,
         floor: 1,
@@ -175,7 +175,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
         name: formData.name,
         capacity: formData.capacity,
         price: formData.price,
-        squareMeter: formData.squareMeter || 0,
+        squareMeter: formData.squareMeter ?? 10,
         bedCount: formData.bedCount || 1,
         bathroomCount: formData.bathroomCount || 1,
         floor: formData.floor || 1,
@@ -203,7 +203,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
           name: '',
           capacity: 1,
           price: 0,
-          squareMeter: 0,
+          squareMeter: 10,
           bedCount: 1,
           bathroomCount: 1,
           floor: 1,
@@ -232,7 +232,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
         name: '',
         capacity: 1,
         price: 0,
-        squareMeter: 0,
+        squareMeter: 10,
         bedCount: 1,
         bathroomCount: 1,
         floor: 1,
@@ -531,7 +531,9 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                   id="squareMeter"
                   name="squareMeter"
                   type="number"
-                  step="0.01"
+                  min={10}
+                  max={50}
+                  step={1}
                   value={formData.squareMeter}
                   onChange={handleInputChange}
                   className={errors.squareMeter ? 'border-red-500 focus:border-red-500' : ''}
