@@ -17,7 +17,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Plus, X } from 'lucide-react';
 import { Building } from '@/types';
 import { BuildingFormData } from '@/lib/validations';
 import { useFormValidation } from '@/hooks/useFormValidation';
@@ -28,7 +27,7 @@ interface BuildingFormDialogProps {
   isOpen: boolean;
   onOpenChange: (open: boolean) => void;
   building?: Building | null;
-  onSubmit: (data: BuildingFormData & { imageFiles?: File[] }) => Promise<void>;
+  onSubmit: (data: BuildingFormData & { imageFile?: File }) => Promise<void>;
   triggerButton?: React.ReactNode;
 }
 
@@ -47,8 +46,8 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
     description: '',
     images: [],
   });
-  // Store File objects separately for FormData submission
-  const [imageFiles, setImageFiles] = useState<(File | string | null)[]>([]);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageFile, setImageFile] = useState<File | undefined>(undefined);
 
   const { errors, validate, clearErrors, clearFieldError } = useFormValidation(buildingSchema);
   const CITIES = ['Đà Nẵng', 'TP HCM', 'Hà Nội'];
@@ -56,17 +55,17 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
   // Load building data when editing
   useEffect(() => {
     if (building) {
-      const buildingImages = building.images || [];
+      const existingImage = building.images?.[0] || null;
       setFormData({
         name: building.name,
         address: building.address,
         city: building.city as BuildingFormData['city'],
         country: building.country,
         description: building.description || '',
-        images: buildingImages,
+        images: existingImage ? [existingImage] : [],
       });
-      // For existing buildings, images are URLs (strings)
-      setImageFiles(buildingImages);
+      setImagePreview(existingImage);
+      setImageFile(undefined);
     } else {
       setFormData({
         name: '',
@@ -76,36 +75,19 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
         description: '',
         images: [],
       });
-      setImageFiles([]);
+      setImagePreview(null);
+      setImageFile(undefined);
     }
     clearErrors();
-
   }, [building]);
 
-  // Sync imageFiles array length with formData.images length
   useEffect(() => {
-    const imagesLength = formData.images?.length || 0;
-    const filesLength = imageFiles.length;
-
-    if (imagesLength !== filesLength) {
-      console.log('Syncing imageFiles array:', {
-        imagesLength,
-        filesLength,
-        needSync: imagesLength !== filesLength
-      });
-
-      const newFiles = [...imageFiles];
-      // Extend array if needed
-      while (newFiles.length < imagesLength) {
-        newFiles.push(null);
+    return () => {
+      if (imagePreview?.startsWith('blob:')) {
+        URL.revokeObjectURL(imagePreview);
       }
-      // Trim array if needed
-      if (newFiles.length > imagesLength) {
-        newFiles.splice(imagesLength);
-      }
-      setImageFiles(newFiles);
-    }
-  }, [formData.images?.length]); // Only sync when length changes
+    };
+  }, [imagePreview]);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -132,19 +114,12 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
       setIsSubmitting(true);
       setSubmitError(null);
 
-      // Prepare data with File objects instead of preview URLs
-      // Filter out null values and keep only File objects
-      const filesToUpload = imageFiles.filter((file): file is File => file instanceof File);
-
-      // Validate: When creating a new building, at least one image is required
-      if (!building && filesToUpload.length === 0) {
+      // Validate: creating a new building requires a selected image file
+      if (!building && !imageFile) {
         setSubmitError('Vui lòng chọn ít nhất một ảnh cho tòa nhà');
         setIsSubmitting(false);
         return;
       }
-
-      console.log('Current imageFiles state:', imageFiles);
-      console.log('Filtered files to upload:', filesToUpload);
 
       const submitData = {
         name: formData.name,
@@ -152,23 +127,17 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
         city: formData.city,
         country: formData.country,
         description: formData.description,
-        images: [], // Don't send preview URLs
-        imageFiles: filesToUpload,
+        images: imagePreview ? [imagePreview] : [],
+        imageFile,
       };
-
-      console.log('Submitting data:', {
-        name: submitData.name,
-        address: submitData.address,
-        imageFilesCount: filesToUpload.length,
-        imageFiles: filesToUpload.map(f => ({ name: f.name, size: f.size, type: f.type }))
-      });
 
       await onSubmit(submitData);
 
       // Reset form and close dialog on success
       if (!building) {
         setFormData({ name: '', address: '', city: '' as BuildingFormData['city'], country: 'Việt Nam', description: '', images: [] });
-        setImageFiles([]);
+        setImagePreview(null);
+        setImageFile(undefined);
       }
       onOpenChange(false);
     } catch (err) {
@@ -184,101 +153,31 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
     onOpenChange(open);
     if (!open) {
       setFormData({ name: '', address: '', city: '' as BuildingFormData['city'], country: 'Việt Nam', description: '', images: [] });
-      setImageFiles([]);
+      setImagePreview(null);
+      setImageFile(undefined);
       clearErrors();
     }
   };
 
-  // Handle image upload for multiple images
-  const handleImageSelect = (index: number) => (imageData: string | File) => {
-    console.log(`handleImageSelect called for index ${index}:`, {
-      type: typeof imageData,
-      isFile: imageData instanceof File,
-      currentImageFilesLength: imageFiles.length,
-      currentImagesLength: formData.images?.length || 0,
-      imageData: imageData instanceof File ? { name: imageData.name, size: imageData.size } : imageData
-    });
-
-    const currentImages = formData.images || [];
-    // Ensure imageFiles array is large enough
-    let currentFiles = [...imageFiles];
-    while (currentFiles.length < currentImages.length) {
-      currentFiles.push(null);
-    }
-
+  const handleImageSelect = (imageData: string | File) => {
     if (imageData === '') {
-      // Remove image
-      const newImages = currentImages.filter((_, i) => i !== index);
-      const newFiles = currentFiles.filter((_, i) => i !== index);
-      setFormData(prev => ({ ...prev, images: newImages }));
-      setImageFiles(newFiles);
-      console.log('Removed image at index', index);
-    } else if (typeof imageData === 'string') {
-      // String URL (existing image from server)
-      const newImages = [...currentImages];
-      newImages[index] = imageData;
-      const newFiles = [...currentFiles];
-      newFiles[index] = imageData; // Keep URL string for existing images
-      setFormData(prev => ({ ...prev, images: newImages }));
-      setImageFiles(newFiles);
-      console.log('Set URL string at index', index, imageData);
-    } else {
-      // File object - store File for FormData, create preview URL
-      const newFiles = [...currentFiles];
-      newFiles[index] = imageData; // Store File object
-      console.log(`Storing File at index ${index}:`, {
-        name: imageData.name,
-        size: imageData.size,
-        type: imageData.type,
-        currentFilesLength: currentFiles.length,
-        newFilesLength: newFiles.length,
-        updatedFiles: newFiles.map((f, i) => ({
-          index: i,
-          type: f instanceof File ? 'File' : typeof f,
-          name: f instanceof File ? f.name : 'N/A'
-        }))
-      });
-      setImageFiles(newFiles); // Update state immediately
-
-      const reader = new FileReader();
-      reader.onload = (e) => {
-        const previewUrl = e.target?.result as string;
-        const newImages = [...currentImages];
-        newImages[index] = previewUrl; // Use data URL for preview only
-        setFormData(prev => ({ ...prev, images: newImages }));
-        console.log('Preview URL set at index', index);
-      };
-      reader.onerror = () => {
-        console.error('FileReader error at index', index);
-      };
-      reader.readAsDataURL(imageData);
+      setImagePreview(null);
+      setImageFile(undefined);
+      setFormData(prev => ({ ...prev, images: [] }));
+      return;
     }
-  };
 
-  const handleAddImageSlot = () => {
-    const currentImages = formData.images || [];
-    const currentFiles = imageFiles.length > 0 ? [...imageFiles] : new Array(currentImages.length).fill(null);
+    if (typeof imageData === 'string') {
+      setImagePreview(imageData);
+      setImageFile(undefined);
+      setFormData(prev => ({ ...prev, images: [imageData] }));
+      return;
+    }
 
-    console.log('Adding image slot:', {
-      currentImagesLength: currentImages.length,
-      currentFilesLength: currentFiles.length,
-      currentFiles: currentFiles
-    });
-
-    setFormData(prev => ({
-      ...prev,
-      images: [...currentImages, '']
-    }));
-    setImageFiles([...currentFiles, null]);
-  };
-
-  const handleRemoveImageSlot = (index: number) => {
-    const currentImages = formData.images || [];
-    const newImages = currentImages.filter((_, i) => i !== index);
-    const currentFiles = [...imageFiles];
-    const newFiles = currentFiles.filter((_, i) => i !== index);
-    setFormData(prev => ({ ...prev, images: newImages }));
-    setImageFiles(newFiles);
+    const localPreview = URL.createObjectURL(imageData);
+    setImagePreview(localPreview);
+    setImageFile(imageData);
+    setFormData(prev => ({ ...prev, images: [localPreview] }));
   };
 
   return (
@@ -369,53 +268,18 @@ const BuildingFormDialog: React.FC<BuildingFormDialogProps> = ({
           </div>
           <div className="grid gap-4">
             <div className="flex items-center justify-between">
-              <Label>Ảnh tòa nhà</Label>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                onClick={handleAddImageSlot}
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Thêm ảnh
-              </Button>
+              <Label>Ảnh đại diện tòa nhà</Label>
             </div>
             <div className="space-y-4">
-              {(formData.images || []).map((image, index) => (
-                <div key={index} className="relative">
-                  <ImageUpload
-                    initialImage={image || undefined}
-                    onImageSelect={handleImageSelect(index)}
-                    label={`Ảnh ${index + 1}`}
-                    className="w-full"
-                  />
-                  {(formData.images || []).length > 0 && (
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="icon"
-                      className="absolute top-8 right-0 h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => handleRemoveImageSlot(index)}
-                    >
-                      <X className="h-4 w-4" />
-                    </Button>
-                  )}
-                </div>
-              ))}
-              {(!formData.images || formData.images.length === 0) && (
-                <div className="border-2 border-dashed rounded-lg p-8 text-center">
-                  <p className="text-sm text-gray-500 mb-2">Chưa có ảnh nào</p>
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="sm"
-                    onClick={handleAddImageSlot}
-                  >
-                    <Plus className="mr-2 h-4 w-4" />
-                    Thêm ảnh đầu tiên
-                  </Button>
-                </div>
-              )}
+              <ImageUpload
+                initialImage={imagePreview || undefined}
+                onImageSelect={handleImageSelect}
+                label="Ảnh tòa nhà"
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground">
+                Hệ thống hiện hỗ trợ 1 ảnh đại diện cho mỗi tòa nhà.
+              </p>
             </div>
           </div>
           {submitError && (

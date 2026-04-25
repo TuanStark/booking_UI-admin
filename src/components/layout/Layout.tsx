@@ -27,7 +27,8 @@ import {
   Sun,
   FileText,
   Building,
-  MessageCircle
+  MessageCircle,
+  ClipboardList,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -89,6 +90,11 @@ const Sidebar: React.FC<SidebarProps> = ({ isCollapsed, onToggle }) => {
       name: 'Tin nhắn',
       href: '/chat',
       icon: MessageCircle,
+    },
+    {
+      name: 'Audit Log',
+      href: '/audit-logs',
+      icon: ClipboardList,
     },
     {
       name: 'Cài đặt',

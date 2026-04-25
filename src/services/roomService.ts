@@ -393,6 +393,70 @@ class RoomService {
   }
 
   /**
+   * Update room status only (partial update)
+   */
+  async updateStatus(
+    id: string,
+    status: 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' | 'DISABLED',
+  ): Promise<Room> {
+    const formData = new FormData();
+    formData.append('status', status);
+
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${this.baseURL}/${id}`, {
+      method: 'PATCH',
+      headers: {
+        Authorization: `Bearer ${token}`,
+      },
+      body: formData,
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      const errorMessage = errorData.message || `HTTP error! status: ${response.status}`;
+      throw new Error(errorMessage);
+    }
+
+    const result = await response.json();
+    const roomData = this.extractRoomData(result);
+    return this.transformRoom(roomData);
+  }
+
+  /**
+   * Bulk update status for multiple rooms in a single request.
+   */
+  async bulkUpdateStatus(dto: {
+    ids: string[];
+    status: 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' | 'DISABLED';
+  }): Promise<{ updated: number }> {
+    const token = localStorage.getItem('auth_token');
+    if (!token) {
+      throw new Error('No authentication token found');
+    }
+
+    const response = await fetch(`${this.baseURL}/bulk-status`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify(dto),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error((errorData as any).message || `HTTP ${response.status}`);
+    }
+
+    const result = await response.json();
+    return (result?.data ?? result) as { updated: number };
+  }
+
+  /**
    * Align active booking payloads with RoomDetailPage (checkIn/checkOut vs start/end from API).
    */
   private normalizeActiveBookings(raw: unknown): any[] {

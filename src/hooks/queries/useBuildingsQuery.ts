@@ -45,7 +45,7 @@ export const useCreateBuilding = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: (data: BuildingFormData & { imageFiles?: File[] }) =>
+        mutationFn: (data: BuildingFormData & { imageFile?: File }) =>
             buildingService.create(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: queryKeys.buildings.lists() });
@@ -60,7 +60,7 @@ export const useUpdateBuilding = () => {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ id, data }: { id: string; data: BuildingFormData & { imageFiles?: File[] } }) =>
+        mutationFn: ({ id, data }: { id: string; data: BuildingFormData & { imageFile?: File } }) =>
             buildingService.update(id, data),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({ queryKey: queryKeys.buildings.detail(variables.id) });

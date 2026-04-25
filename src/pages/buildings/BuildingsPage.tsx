@@ -55,7 +55,7 @@ const BuildingsPage: React.FC = () => {
   };
 
   // Handle form submit from BuildingFormDialog
-  const handleFormSubmit = async (formData: BuildingFormData & { imageFiles?: File[] }) => {
+  const handleFormSubmit = async (formData: BuildingFormData & { imageFile?: File }) => {
     try {
       if (editingBuilding) {
         await updateBuildingMutation.mutateAsync({ id: editingBuilding.id, data: formData });
@@ -107,9 +107,10 @@ const BuildingsPage: React.FC = () => {
       setBuildingToDelete(null);
     } catch (err) {
       console.error('Error deleting building:', err);
+      const errorMessage = err instanceof Error ? err.message : 'Không thể xóa tòa nhà.';
       toast({
         title: "Lỗi",
-        description: "Không thể xóa tòa nhà.",
+        description: errorMessage,
         variant: "destructive",
       });
       setDeleteConfirmOpen(false);

@@ -36,6 +36,7 @@ import PostFormPage from './pages/posts/PostFormPage';
 import { Toaster } from '@/components/ui/toaster';
 import PostDetailPage from './pages/posts/PostDetailPage';
 import ChatPage from './pages/chat/ChatPage';
+import AuditLogPage from './pages/audit-logs/AuditLogPage';
 
 function App() {
   return (
@@ -91,6 +92,7 @@ function App() {
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/chat" element={<ChatPage />} />
               <Route path="/chat/:conversationId" element={<ChatPage />} />
+              <Route path="/audit-logs" element={<AuditLogPage />} />
 
               {/* Catch all route */}
               <Route path="*" element={<Navigate to="/dashboard" replace />} />

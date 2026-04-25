@@ -86,3 +86,34 @@ export const useDeleteRoom = () => {
         },
     });
 };
+
+/**
+ * Hook để cập nhật nhanh trạng thái phòng (partial update)
+ */
+export const useUpdateRoomStatus = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: ({ id, status }: { id: string; status: 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' | 'DISABLED' }) =>
+            roomService.updateStatus(id, status),
+        onSuccess: (_, variables) => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.rooms.detail(variables.id) });
+            queryClient.invalidateQueries({ queryKey: queryKeys.rooms.lists() });
+        },
+    });
+};
+
+/**
+ * Hook để cập nhật trạng thái nhiều phòng cùng lúc (single DB round-trip)
+ */
+export const useBulkUpdateRoomStatus = () => {
+    const queryClient = useQueryClient();
+
+    return useMutation({
+        mutationFn: (dto: { ids: string[]; status: 'AVAILABLE' | 'BOOKED' | 'MAINTENANCE' | 'DISABLED' }) =>
+            roomService.bulkUpdateStatus(dto),
+        onSuccess: () => {
+            queryClient.invalidateQueries({ queryKey: queryKeys.rooms.lists() });
+        },
+    });
+};

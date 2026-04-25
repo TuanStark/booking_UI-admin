@@ -166,9 +166,9 @@ class BuildingService {
   /**
    * Create a new building with FormData (to support file upload)
    */
-  async create(data: BuildingFormData & { imageFiles?: File[] }): Promise<Building> {
-    // Validate that at least one image file is provided
-    if (!data.imageFiles || data.imageFiles.length === 0) {
+  async create(data: BuildingFormData & { imageFile?: File }): Promise<Building> {
+    // Validate that an image file is provided
+    if (!data.imageFile) {
       throw new Error('Vui lòng chọn ít nhất một ảnh cho tòa nhà');
     }
 
@@ -183,10 +183,9 @@ class BuildingService {
       formData.append('description', data.description);
     }
 
-    // Add image files - use only the first file as backend expects single file
     // Backend uses FileInterceptor('file') which expects a single file
-    formData.append('file', data.imageFiles[0]);
-    console.log(`Sending file: ${data.imageFiles[0].name} (${data.imageFiles[0].size} bytes)`);
+    formData.append('file', data.imageFile);
+    console.log(`Sending file: ${data.imageFile.name} (${data.imageFile.size} bytes)`);
 
     const token = localStorage.getItem('auth_token');
     if (!token) {
@@ -224,7 +223,7 @@ class BuildingService {
   /**
    * Update an existing building with FormData (to support file upload)
    */
-  async update(id: string, data: BuildingFormData & { imageFiles?: File[] }): Promise<Building> {
+  async update(id: string, data: BuildingFormData & { imageFile?: File }): Promise<Building> {
     const formData = new FormData();
 
     // Add text fields
@@ -236,11 +235,9 @@ class BuildingService {
       formData.append('description', data.description);
     }
 
-    // Add image files if provided
-    if (data.imageFiles && data.imageFiles.length > 0) {
-      data.imageFiles.forEach((file) => {
-        formData.append('file', file);
-      });
+    // Add image file if provided
+    if (data.imageFile) {
+      formData.append('file', data.imageFile);
     }
 
     const token = localStorage.getItem('auth_token');
