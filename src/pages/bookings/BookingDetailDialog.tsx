@@ -96,30 +96,30 @@ function BookingStatusBadge({ status }: { status: Booking['bookingStatus'] }) {
   );
 }
 
-function PaymentStatusBadge({ status }: { status: Booking['paymentStatus'] }) {
-  const colors: Record<string, string> = {
-    paid: 'bg-green-100 text-green-800 ring-green-500/20 dark:bg-green-950/50 dark:text-green-300 dark:ring-green-400/20',
-    pending: 'bg-orange-100 text-orange-900 ring-orange-500/25 dark:bg-orange-950/40 dark:text-orange-200 dark:ring-orange-400/20',
-    failed: 'bg-red-100 text-red-800 ring-red-500/20 dark:bg-red-950/50 dark:text-red-200 dark:ring-red-400/20',
-    refunded: 'bg-zinc-200 text-zinc-800 ring-zinc-500/15 dark:bg-zinc-800 dark:text-zinc-200 dark:ring-zinc-400/15',
-  };
-  const labels: Record<string, string> = {
-    paid: 'Đã thanh toán',
-    pending: 'Chờ thanh toán',
-    failed: 'Thất bại',
-    refunded: 'Hoàn tiền',
-  };
-  return (
-    <span
-      className={cn(
-        'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset',
-        colors[status] ?? colors.pending
-      )}
-    >
-      {labels[status] ?? status}
-    </span>
-  );
-}
+// function PaymentStatusBadge({ status }: { status: Booking['paymentStatus'] }) {
+//   const colors: Record<string, string> = {
+//     paid: 'bg-green-100 text-green-800 ring-green-500/20 dark:bg-green-950/50 dark:text-green-300 dark:ring-green-400/20',
+//     pending: 'bg-orange-100 text-orange-900 ring-orange-500/25 dark:bg-orange-950/40 dark:text-orange-200 dark:ring-orange-400/20',
+//     failed: 'bg-red-100 text-red-800 ring-red-500/20 dark:bg-red-950/50 dark:text-red-200 dark:ring-red-400/20',
+//     refunded: 'bg-zinc-200 text-zinc-800 ring-zinc-500/15 dark:bg-zinc-800 dark:text-zinc-200 dark:ring-zinc-400/15',
+//   };
+//   const labels: Record<string, string> = {
+//     paid: 'Đã thanh toán',
+//     pending: 'Chờ thanh toán',
+//     failed: 'Thất bại',
+//     refunded: 'Hoàn tiền',
+//   };
+//   return (
+//     <span
+//       className={cn(
+//         'inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset',
+//         colors[status] ?? colors.pending
+//       )}
+//     >
+//       {labels[status] ?? status}
+//     </span>
+//   );
+// }
 
 function SectionCard({
   icon: Icon,
@@ -325,7 +325,7 @@ export function BookingDetailDialog({ bookingId, open, onOpenChange }: Props) {
                       </span>
                     </DetailRow>
                     <DetailRow label="Tòa / khu">{booking.buildingName || '—'}</DetailRow>
-                   
+
                   </SectionCard>
                 </div>
 
@@ -358,9 +358,9 @@ export function BookingDetailDialog({ bookingId, open, onOpenChange }: Props) {
                   <DetailRow label="Tổng tiền">
                     <span className="font-semibold tabular-nums text-foreground">{formatVND(booking.totalAmount)}</span>
                   </DetailRow>
-                  <DetailRow label="Thanh toán">
+                  {/* <DetailRow label="Thanh toán">
                     <PaymentStatusBadge status={booking.paymentStatus} />
-                  </DetailRow>
+                  </DetailRow> */}
                   <DetailRow label="Đặt phòng">
                     <BookingStatusBadge status={booking.bookingStatus} />
                   </DetailRow>

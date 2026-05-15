@@ -205,12 +205,12 @@ export function PaymentDetailDialog({ paymentId, open, onOpenChange }: Props) {
                       )}
                     </Row>
                     <Row label="Mã sinh viên">{payment.studentId || '—'}</Row>
-                    <Row label="User ID">
+                    {/* <Row label="User ID">
                       <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-                        <span className="break-all font-mono text-xs">{payment.userId || '—'}</span>
-                        {payment.userId ? <CopyIdButton value={payment.userId} label="User ID" /> : null}
+                        <span className="break-all font-mono text-xs">{payment.studentId || '—'}</span>
+                        {payment.studentId ? <CopyIdButton value={payment.studentId} label="User ID" /> : null}
                       </div>
-                    </Row>
+                    </Row> */}
                   </CardContent>
                 </Card>
 
