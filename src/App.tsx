@@ -12,7 +12,6 @@ import { ProtectedRoute, PublicRoute } from './components/auth/ProtectedRoute';
 
 // Auth Pages
 import LoginPage from './pages/auth/LoginPage';
-import RegisterPage from './pages/auth/RegisterPage';
 
 // Layout
 import Layout from './components/layout/Layout';
@@ -53,15 +52,6 @@ function App() {
                 </PublicRoute>
               }
             />
-            <Route
-              path="/register"
-              element={
-                <PublicRoute>
-                  <RegisterPage />
-                </PublicRoute>
-              }
-            />
-
             {/* Protected Routes - Require authentication */}
             <Route
               path="/"

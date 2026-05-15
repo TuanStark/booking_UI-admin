@@ -5,6 +5,31 @@ import { ResponseData } from '@/types/globalClass';
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:4000';
 
 /** api-gateway wraps upstream as `{ status, data, headers }` */
+function extractApiErrorMessage(errorData: unknown): string | undefined {
+  if (!errorData || typeof errorData !== 'object') return undefined;
+
+  const record = errorData as Record<string, unknown>;
+
+  if (typeof record.message === 'string') return record.message;
+
+  if (record.message && typeof record.message === 'object') {
+    const nested = record.message as Record<string, unknown>;
+    if (typeof nested.message === 'string') return nested.message;
+  }
+
+  const data = record.data;
+  if (data && typeof data === 'object') {
+    const dataRecord = data as Record<string, unknown>;
+    if (typeof dataRecord.message === 'string') return dataRecord.message;
+  }
+
+  if (Array.isArray(record.message)) {
+    return record.message.filter((item): item is string => typeof item === 'string').join(', ');
+  }
+
+  return undefined;
+}
+
 function unwrapGatewayBody<T>(json: unknown): T {
   if (
     json &&
@@ -48,7 +73,8 @@ class AuthService {
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        const message = extractApiErrorMessage(errorData);
+        throw new Error(message || `HTTP error! status: ${response.status}`);
       }
 
       return await response.json();
@@ -84,7 +110,6 @@ class AuthService {
       method: 'POST',
       body: JSON.stringify(credentials),
     });
-    console.log('response login', response);
     return response.data as unknown as ResponseData<AuthResponse>;
   }
 

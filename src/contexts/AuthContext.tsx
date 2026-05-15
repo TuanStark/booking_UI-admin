@@ -7,10 +7,15 @@ import React, {
   ReactNode,
 } from 'react';
 import { authService } from '../services/authService';
-import { jwtDecode } from 'jwt-decode';
 import { AuthResponse, AuthState, LoginCredentials, RegisterData, User } from '@/types';
 import { ResponseData } from '@/types/globalClass';
-import { getTokenExpirationTime, isTokenExpired } from '@/utils/authUtils';
+import {
+  assertAdminAccess,
+  getTokenExpirationTime,
+  isAdminRole,
+  isTokenExpired,
+  parseAuthUserFromToken,
+} from '@/utils/authUtils';
 
 
 
@@ -60,10 +65,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const { accessToken, refreshToken } =
         await authService.refreshToken(storedRefresh);
+      const user = parseAuthUserFromToken(accessToken);
+      assertAdminAccess(user.role);
+
       localStorage.setItem('auth_token', accessToken);
       localStorage.setItem('refresh_token', refreshToken);
+      localStorage.setItem('user_data', JSON.stringify(user));
       setAuthState(prev => ({
         ...prev,
+        user: user as unknown as User,
         accessToken,
         refreshToken,
         isAuthenticated: true,
@@ -106,9 +116,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             }
           }
 
-          const user = JSON.parse(userData);
+          const user = parseAuthUserFromToken(accessToken);
+          if (!isAdminRole(user.role)) {
+            localStorage.removeItem('auth_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user_data');
+            setAuthState(prev => ({ ...prev, isLoading: false }));
+            return;
+          }
+
+          localStorage.setItem('user_data', JSON.stringify(user));
           setAuthState({
-            user,
+            user: user as unknown as User,
             accessToken,
             refreshToken,
             isAuthenticated: true,
@@ -155,18 +174,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const response = await authService.login(credentials) as ResponseData<AuthResponse>;
       const { accessToken, refreshToken } = response.data as unknown as AuthResponse;
 
-      // Decode accessToken to extract user info
-      const decoded: any = jwtDecode(accessToken);
-      const user = {
-        id: decoded.sub,
-        email: decoded.email,
-        name: decoded?.role?.name || '',
-        role: decoded?.role?.name?.toLowerCase() as User['role'],
-        avatar: '', // Optional: update if available
-        createdAt: decoded?.role?.createdAt || '',
-        updatedAt: decoded?.role?.updatedAt || '',
-        status: 'active'
-      };
+      const user = parseAuthUserFromToken(accessToken);
+      assertAdminAccess(user.role);
 
       // Store in localStorage
       localStorage.setItem('auth_token', accessToken);
@@ -174,7 +183,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('user_data', JSON.stringify(user));
 
       setAuthState({
-        user: user as User,
+        user: user as unknown as User,
         accessToken,
         refreshToken,
         isAuthenticated: true,
@@ -192,17 +201,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       
       const response = await authService.register(data);
       const { accessToken, refreshToken } = response as unknown as AuthResponse;
-      const decoded: any = jwtDecode(accessToken);
-      const user = {
-        id: decoded.sub,
-        email: decoded.email,
-        name: decoded?.role?.name || '',
-        role: decoded?.role?.name?.toLowerCase() as User['role'],
-        avatar: '',
-        createdAt: decoded?.role?.createdAt || '',
-        updatedAt: decoded?.role?.updatedAt || '',
-        status: 'active'
-      };
+
+      const user = parseAuthUserFromToken(accessToken);
+      assertAdminAccess(user.role);
 
       // Store in localStorage
       localStorage.setItem('auth_token', accessToken);
@@ -210,7 +211,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       localStorage.setItem('user_data', JSON.stringify(user));
 
       setAuthState({
-        user: user as User,
+        user: user as unknown as User,
         accessToken,
         refreshToken,
         isAuthenticated: true,
