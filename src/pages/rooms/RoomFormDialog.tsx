@@ -16,6 +16,7 @@ import { useFormValidation } from '@/hooks/useFormValidation';
 import { roomSchema } from '@/lib/validations';
 import ImageUpload from '@/components/ImageUpload';
 import { useBuildings } from '@/hooks/queries/useBuildingsQuery';
+import { translateAmenity } from '@/utils/amenityUtils';
 
 
 interface RoomFormDialogProps {
@@ -617,7 +618,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                         className="h-4 w-4 rounded border-gray-300"
                       />
                       <label htmlFor={`amenity-${amenity}`} className="text-sm cursor-pointer">
-                        {amenity}
+                        {translateAmenity(amenity)}
                       </label>
                     </div>
                   ))}

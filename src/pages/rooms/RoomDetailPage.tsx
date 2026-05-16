@@ -26,6 +26,7 @@ import type { BookingLike } from '@/lib/bookingTimeline';
 import type { Booking } from '@/types';
 import { formatVND } from '@/utils/formatCurrency';
 import { format, differenceInDays, isValid } from 'date-fns';
+import { translateAmenity } from '@/utils/amenityUtils';
 
 function parseBookingDate(value: unknown): Date | null {
   if (value == null || value === '') return null;
@@ -481,7 +482,7 @@ const RoomDetailPage: React.FC = () => {
                       className="inline-flex items-center gap-1.5 rounded-md border border-border bg-background px-2 py-1 text-xs font-medium text-foreground"
                     >
                       {getAmenityIcon(a)}
-                      {a}
+                      {translateAmenity(a)}
                     </span>
                   ))}
                 </div>
