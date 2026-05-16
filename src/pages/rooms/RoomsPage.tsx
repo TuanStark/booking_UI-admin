@@ -11,6 +11,8 @@ import RoomCard from './RoomCard';
 import Pagination from '@/components/ui/pagination';
 import ConfirmDialog from '@/components/ui/confirm-dialog';
 import { useRooms, useCreateRoom, useUpdateRoom, useDeleteRoom } from '@/hooks/queries/useRoomsQuery';
+import { useBuildings } from '@/hooks/queries/useBuildingsQuery';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/components/ui/use-toast';
 
 
@@ -18,6 +20,7 @@ const RoomsPage = () => {
 
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [selectedBuildingId, setSelectedBuildingId] = useState<string>('all');
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoom, setEditingRoom] = useState<Room | null>(null);
   const [currentPage, setCurrentPage] = useState(1);
@@ -30,11 +33,16 @@ const RoomsPage = () => {
   const updateRoomMutation = useUpdateRoom();
   const deleteRoomMutation = useDeleteRoom();
 
+  // Fetch Buildings for Filter
+  const { data: buildingsResponse } = useBuildings();
+  const buildings = buildingsResponse?.data || [];
+
   // Use TanStack Query
   const { data: response, isLoading, isError, refetch } = useRooms({
     page: currentPage,
     limit: itemsPerPage,
     search: searchTerm || undefined,
+    buildingId: selectedBuildingId !== 'all' ? selectedBuildingId : undefined,
   });
 
   const rooms = response?.data || [];
@@ -156,7 +164,7 @@ const RoomsPage = () => {
           <CardTitle>Tìm phòng</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <Input
@@ -167,8 +175,29 @@ const RoomsPage = () => {
                 className="pl-10"
               />
             </div>
-            <Button onClick={handleSearch} variant="outline">
-              Tìm
+            <div className="w-full sm:w-[200px]">
+              <Select
+                value={selectedBuildingId}
+                onValueChange={(value) => {
+                  setSelectedBuildingId(value);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Tất cả tòa nhà" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Tất cả tòa nhà</SelectItem>
+                  {buildings.map((building) => (
+                    <SelectItem key={building.id} value={building.id}>
+                      {building.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <Button onClick={handleSearch} variant="outline" className="shrink-0">
+              Tìm kiếm
             </Button>
           </div>
         </CardContent>
