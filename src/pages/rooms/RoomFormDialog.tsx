@@ -437,7 +437,7 @@ const RoomFormDialog: React.FC<RoomFormDialogProps> = ({
                   name="buildingId"
                   value={formData.buildingId}
                   onChange={handleInputChange}
-                  className={`h-10 rounded-md border border-input bg-background px-3 py-2 ${errors.buildingId ? 'border-red-500 focus:border-red-500' : ''}`}
+                  className={`h-10 rounded-md border border-input bg-background px-3 py-2 w-[99%] ${errors.buildingId ? 'border-red-500 focus:border-red-500' : ''}`}
                   disabled={isLoadingBuildings}
                 >
                   <option value="">Chọn tòa nhà</option>
